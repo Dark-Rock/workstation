@@ -31,6 +31,7 @@ def run(
     profile: str | None,
     menu: bool | None,
     dry_run: bool,
+    package_names: list[str] | None = None,
 ) -> None:
     ensure_supported_or_exit(platform_info)
 
@@ -42,7 +43,6 @@ def run(
     manifest = load_manifest_or_exit(repo_root)
 
     dotfile_packages: list[str] | None = None
-    package_names: list[str] | None = None
     setup_names: list[str] | None = None
     groups = resolve_groups_or_exit(manifest, groups=groups, profile=profile)
     show_menu = should_show_menu(menu, groups=groups, profile=profile)

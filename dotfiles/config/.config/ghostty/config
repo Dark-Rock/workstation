@@ -22,7 +22,20 @@ window-decoration = auto
 window-save-state = always
 window-padding-x = 4
 window-padding-y = 4
+# Keep padding even when only one pane is visible (no lopsided gap).
+window-padding-balance = true
 window-theme = auto
+# Native tab strip in the titlebar (cleaner than a separate tab row).
+macos-titlebar-style = tabs
+
+# Split focus cues: dim the inactive split and tint the divider (Catppuccin
+# Macchiato overlay0) so the focused pane is obvious at a glance.
+unfocused-split-opacity = 0.85
+split-divider-color = #5b6078
+
+# Quick terminal: a drop-down scratch terminal toggled from anywhere.
+quick-terminal-position = top
+quick-terminal-animation-duration = 0.15
 
 # ==================================================
 # BEHAVIOR
@@ -76,6 +89,10 @@ keybind = super+shift+c=reload_config
 keybind = super+equal=increase_font_size:1
 keybind = super+minus=decrease_font_size:1
 keybind = super+0=reset_font_size
+
+# Drop-down quick terminal, toggled globally (works even when Ghostty is not
+# focused; macOS may prompt for Accessibility permission on first use).
+keybind = global:super+grave_accent=toggle_quick_terminal
 
 
 # ==================================================

@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import click
+
 from wkst import dotfiles
 from wkst.dotfiles import Action, LinkResult
 from wkst.logging import log
@@ -18,10 +20,19 @@ def run(
     paths: tuple[Path, ...],
     purge: bool,
     dry_run: bool,
+    yes: bool = False,
 ) -> None:
     if not paths:
         log.error("remove: no paths given")
         sys.exit(2)
+
+    # --purge deletes the file from BOTH the repo and $HOME (content is lost);
+    # confirm interactively. Non-interactive shells are never blocked.
+    if purge and not dry_run and not yes and sys.stdin.isatty():
+        click.confirm(
+            "remove --purge will delete these files from the repo AND $HOME. Continue?",
+            abort=True,
+        )
 
     home = platform_info.home
     all_results: list[LinkResult] = []

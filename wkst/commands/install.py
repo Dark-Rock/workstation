@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from wkst import bootstrap, dotfiles, plugins
+from wkst import bootstrap, dotfiles, plugins, render
 from wkst.commands.common import (
     ensure_supported_or_exit,
     load_manifest_or_exit,
@@ -29,6 +29,7 @@ def run(
     menu: bool | None,
     dry_run: bool,
     customize_only: bool = False,
+    package_names: list[str] | None = None,
 ) -> None:
     ensure_supported_or_exit(platform_info)
 
@@ -40,7 +41,6 @@ def run(
     manifest = load_manifest_or_exit(repo_root)
 
     preferences = InstallPreferences()
-    package_names: list[str] | None = None
     dotfile_packages: list[str] | None = None
     setup_names: list[str] | None = None
     groups = resolve_groups_or_exit(manifest, groups=groups, profile=profile)
@@ -59,10 +59,18 @@ def run(
     if wants_setup(setup_names, "bootstrap"):
         log.info("phase 1/5: bootstrap prerequisites")
         if not bootstrap.ensure_apt_prereqs(platform_info, dry_run=dry_run):
-            log.error("apt prereqs failed; aborting")
+            render.print_failure(
+                "APT prerequisites failed — install aborted",
+                ["Could not install base build/curl/git packages via apt."],
+                hint="re-run with -v to see the failing command",
+            )
             sys.exit(1)
         if not bootstrap.ensure_homebrew(platform_info, dry_run=dry_run):
-            log.error("Homebrew install failed; aborting")
+            render.print_failure(
+                "Homebrew install failed — install aborted",
+                ["Homebrew is required for package installation on this platform."],
+                hint="re-run with -v for details; see https://brew.sh",
+            )
             sys.exit(1)
     else:
         log.info("phase 1/5: bootstrap prerequisites skipped by menu")

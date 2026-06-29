@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, cast
 
@@ -11,10 +10,11 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from wkst import dotfiles
+from wkst import dotfiles, selection
 from wkst.manifest import Manifest, Package
 from wkst.platform import PlatformInfo
 from wkst.preferences import InstallPreferences
+from wkst.selection import InstallSelection
 from wkst.tui import BACK, cancel_if_requested, checkbox_menu, choice_menu
 
 _SETUP_LABELS = {
@@ -31,66 +31,7 @@ _SETUP_LABELS = {
 
 _PACKAGE_UPDATE_SETUPS = {"metadata", "brew_formulae", "apt_upgrade"}
 
-_GROUP_DESCRIPTIONS = {
-    "ai": "AI assistants and coding agents",
-    "api": "HTTP, gRPC, and load-testing clients",
-    "containers": "Container build, debug, and security tools",
-    "core": "Base CLI dependencies used by other installs",
-    "db": "Database CLIs and SQL workbenches",
-    "dev": "Developer build, lint, and language tooling",
-    "docs": "Document, diagram, PDF, and image utilities",
-    "editor": "Editors, editor CLIs, and language servers",
-    "fonts": "Nerd Fonts for terminals and editors",
-    "git": "GitHub, diffs, and Git terminal UIs",
-    "gui": "Desktop GUI applications",
-    "iac": "Infrastructure-as-code tools",
-    "k8s": "Kubernetes CLIs and diagnostics",
-    "languages": "Language runtimes and package managers",
-    "perf": "Benchmarking and load-generation tools",
-    "quality": "Linters, formatters, and scanners",
-    "search": "Search, file navigation, and data viewers",
-    "secrets": "Secret, SBOM, and supply-chain scanners",
-    "shell": "Shell, prompt, history, and completions",
-    "system": "System and network diagnostics",
-    "terminal": "Terminal emulator, multiplexer, and shell UI",
-}
-
-_TOOL_SECTIONS = (
-    ("core", "Core", "Base dependencies shared by the rest of the setup", ("core",)),
-    (
-        "dev",
-        "Dev",
-        "Development, languages, APIs, databases, quality, editor, and Git tools",
-        ("dev", "db", "languages", "api", "quality", "editor", "git"),
-    ),
-    (
-        "term",
-        "Term",
-        "Terminal, shell, search, navigation, and local system tooling",
-        ("terminal", "shell", "search", "system"),
-    ),
-    (
-        "ops",
-        "Ops",
-        "Containers, Kubernetes, performance, IaC, and security tooling",
-        ("containers", "k8s", "perf", "iac", "secrets"),
-    ),
-    ("desktop", "Desktop", "GUI apps, fonts, and document utilities", ("gui", "fonts", "docs")),
-    ("ai", "AI", "AI assistants and coding-agent tools", ("ai",)),
-)
-
 MainAction = Literal["install", "update", "customize_install", "uninstall"]
-
-
-@dataclass(frozen=True)
-class InstallSelection:
-    """Interactive install/update selections."""
-
-    groups: list[str] | None
-    package_names: list[str] | None
-    dotfile_packages: list[str] | None
-    setup_names: list[str] | None
-    preferences: InstallPreferences
 
 
 def choose_install_options(
@@ -213,9 +154,9 @@ def _choose_options_tui(
     include_preferences: bool,
     show_setup_mode: bool = True,
 ) -> InstallSelection:
-    available_tool_sections = _available_tool_sections(manifest)
+    available_tool_sections = selection.available_tool_sections(manifest)
     selected_tool_sections = {section_id for section_id, *_rest in available_tool_sections}
-    selected_groups = _groups_for_tool_sections(manifest, selected_tool_sections)
+    selected_groups = selection.groups_for_tool_sections(manifest, selected_tool_sections)
     selected_package_names = {p.name for p in manifest.packages}
     selected_package_phase = True
     visible_setup_choices = _visible_setup_choices(setup_choices)
@@ -228,7 +169,7 @@ def _choose_options_tui(
 
     mode = "customize"
     if show_setup_mode:
-        mode = choice_menu(
+        chosen_mode = choice_menu(
             title="Setup mode",
             help_text="Choose whether to run the default full setup or customize it first.",
             choices=[
@@ -236,9 +177,12 @@ def _choose_options_tui(
                 ("customize", "Customize phases, tools, packages, and options"),
             ],
         )
-        cancel_if_requested(mode)
+        cancel_if_requested(chosen_mode)
+        mode = cast(str, chosen_mode)
     if mode == "everything":
-        selected_groups_list, package_names = _package_selection(manifest, selected_package_names)
+        selected_groups_list, package_names = selection.package_selection(
+            manifest, selected_package_names
+        )
         setup_names = [*package_setup_names, *visible_setup_choices]
         dotfile_packages = [spec for spec, _label in dotfile_options]
         _render_selection_summary(
@@ -339,8 +283,8 @@ def _choose_options_tui(
                 step -= 1
                 continue
             cancel_if_requested(result)
-            package_names = {package.name for package in packages}
-            selected_package_names.difference_update(package_names)
+            group_package_names = {package.name for package in packages}
+            selected_package_names.difference_update(group_package_names)
             selected_package_names.update(cast(set[str], result))
             step += 1
             continue
@@ -383,7 +327,9 @@ def _choose_options_tui(
         ).strip()
         preferences = InstallPreferences(welcome_image=image or None)
 
-    selected_groups_list, package_names = _package_selection(manifest, selected_package_names)
+    selected_groups_list, package_names = selection.package_selection(
+        manifest, selected_package_names
+    )
     if not selected_package_phase:
         selected_groups_list = []
         package_names = []
@@ -412,10 +358,6 @@ def _choose_options_tui(
         setup_names=setup_names,
         preferences=preferences,
     )
-
-
-def _packages_for_groups(manifest: Manifest, groups: set[str]) -> list[Package]:
-    return [package for package in manifest.packages if set(package.groups) & groups]
 
 
 def _packages_for_group_menu(
@@ -454,31 +396,6 @@ def _package_phase_label(package_action: str) -> str:
     return "Phase: install packages from manifest"
 
 
-def _available_tool_sections(
-    manifest: Manifest,
-) -> list[tuple[str, str, str, tuple[str, ...]]]:
-    known_groups = set(manifest.all_groups())
-    sections = [
-        (section_id, name, description, tuple(group for group in groups if group in known_groups))
-        for section_id, name, description, groups in _TOOL_SECTIONS
-    ]
-    sections = [section for section in sections if section[3]]
-
-    grouped = {group for *_prefix, groups in sections for group in groups}
-    misc_groups = tuple(sorted(known_groups - grouped))
-    if misc_groups:
-        sections.append(("misc", "Misc", "Other tools", misc_groups))
-    return sections
-
-
-def _groups_for_tool_sections(manifest: Manifest, selected_sections: set[str]) -> set[str]:
-    groups: set[str] = set()
-    for section_id, _name, _description, section_groups in _available_tool_sections(manifest):
-        if section_id in selected_sections:
-            groups.update(section_groups)
-    return groups
-
-
 def _ordered_selected_groups(
     sections: list[tuple[str, str, str, tuple[str, ...]]],
     selected_sections: set[str],
@@ -499,7 +416,9 @@ def _default_groups_after_tool_section_change(
     selected_groups: set[str],
 ) -> set[str]:
     groups: set[str] = set()
-    for section_id, _name, _description, section_groups in _available_tool_sections(manifest):
+    for section_id, _name, _description, section_groups in selection.available_tool_sections(
+        manifest
+    ):
         if section_id not in selected_sections:
             continue
         section_group_set = set(section_groups)
@@ -616,7 +535,7 @@ def _humanize_dotfile_name(name: str) -> str:
 def _default_package_selection_after_group_change(
     manifest: Manifest, selected_groups: set[str], selected_package_names: set[str]
 ) -> set[str]:
-    packages = _packages_for_groups(manifest, selected_groups)
+    packages = selection.packages_for_groups(manifest, selected_groups)
     package_names = {package.name for package in packages}
     kept = selected_package_names & package_names
     return kept or package_names
@@ -626,18 +545,6 @@ def _package_label(package: Package) -> str:
     binary = package.binary or package.name
     description = f" — {package.description}" if package.description else ""
     return f"{package.name} ({binary}){description}"
-
-
-def _package_selection(
-    manifest: Manifest, selected_package_names: set[str]
-) -> tuple[list[str], list[str]]:
-    selected_names = [p.name for p in manifest.packages if p.name in selected_package_names]
-    selected_groups: list[str] = []
-    for package in manifest.packages:
-        if package.name not in selected_package_names:
-            continue
-        selected_groups.extend(g for g in package.groups if g not in selected_groups)
-    return selected_groups, selected_names
 
 
 def _choose_packages_by_group(

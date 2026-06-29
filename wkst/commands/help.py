@@ -32,6 +32,13 @@ _SECTIONS: list[tuple[str, list[tuple[str, str, str]]]] = [
                 "Exit code is non-zero when anything is wrong.",
                 "wkst doctor",
             ),
+            (
+                "dashboard",
+                "Full-screen interactive UI: browse/select packages by section, run "
+                "health checks, and launch install/update/sync. Bare `wkst` opens it "
+                "in a terminal (set WKST_NO_DASHBOARD=1 for the classic menu).",
+                "wkst dashboard",
+            ),
         ],
     ),
     (

@@ -7,7 +7,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from wkst import dotfiles
+from wkst import dotfiles, render
 from wkst.backends import all_backends
 from wkst.logging import log
 from wkst.manifest import ManifestError, load
@@ -19,6 +19,7 @@ class Check:
     name: str
     ok: bool
     detail: str = ""
+    fix: str | None = None  # remediation command surfaced as a fix hint
 
 
 def run(*, repo_root: Path, platform_info: PlatformInfo) -> int:
@@ -79,7 +80,8 @@ def _check_packages(manifest, platform_info: PlatformInfo) -> list[Check]:
             Check(
                 name=f"packages: {len(applicable) - len(missing)}/{len(applicable)} present",
                 ok=False,
-                detail="run `wkst install` to repair — missing: " + ", ".join(sorted(missing)),
+                detail="missing: " + ", ".join(sorted(missing)),
+                fix="wkst install",
             )
         )
     else:
@@ -125,7 +127,8 @@ def _check_dotfiles(repo_root: Path, platform_info: PlatformInfo) -> list[Check]
         Check(
             name=f"dotfiles: {len(drift)} drifted",
             ok=False,
-            detail="run `wkst sync --force` to relink (backs up real files)",
+            detail="relink to repair (backs up real files)",
+            fix="wkst sync --force",
         )
     ]
 
@@ -158,13 +161,26 @@ def _check_shell(platform_info: PlatformInfo) -> list[Check]:
 
 def _render(checks: list[Check]) -> int:
     failed = [c for c in checks if not c.ok]
-    for c in checks:
-        marker = "OK   " if c.ok else "FAIL "
-        suffix = f" — {c.detail}" if c.detail else ""
-        if c.ok:
-            log.success(f"{marker}{c.name}{suffix}")
-        else:
-            log.warn(f"{marker}{c.name}{suffix}")
+
+    if render.rich_enabled():
+        render.console().print(render.doctor_table(checks))
+        for c in failed:
+            render.print_failure(
+                title=c.name,
+                lines=[c.detail] if c.detail else [],
+                hint=c.fix,
+            )
+    else:
+        for c in checks:
+            marker = "OK   " if c.ok else "FAIL "
+            suffix = f" — {c.detail}" if c.detail else ""
+            if c.ok:
+                log.success(f"{marker}{c.name}{suffix}")
+            else:
+                log.warn(f"{marker}{c.name}{suffix}")
+                if c.fix:
+                    log.warn(f"       fix: {c.fix}")
+
     if failed:
         log.warn(f"doctor: {len(failed)} check(s) failed")
         return 1

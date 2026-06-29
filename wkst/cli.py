@@ -56,9 +56,13 @@ def main(ctx: click.Context, verbose: bool, quiet: bool) -> None:
     _augment_path(info)
     ctx.obj["platform"] = info
 
-    # Bare `wkst` in a terminal opens the main action menu. Non-interactive
-    # invocations keep the help overview so scripts do not hang on a TUI.
+    # Bare `wkst` in a terminal opens the full-screen dashboard when possible,
+    # falling back to the prompt-toolkit action menu on a dumb terminal or when
+    # Textual is unavailable. Non-interactive invocations keep the help overview
+    # so scripts do not hang on a TUI.
     if ctx.invoked_subcommand is None:
+        if sys.stdin.isatty() and sys.stdout.isatty() and _launch_dashboard(ctx):
+            return
         if sys.stdin.isatty():
             _run_main_menu(ctx)
         else:
@@ -67,14 +71,30 @@ def main(ctx: click.Context, verbose: bool, quiet: bool) -> None:
             cmd.show()
 
 
+def _launch_dashboard(ctx: click.Context) -> bool:
+    """Try to open the Textual dashboard. Return True if it handled the session.
+
+    Returns False (so the caller falls back to the menu) when the dashboard is
+    disabled via ``WKST_NO_DASHBOARD`` or Textual cannot be imported.
+    """
+    if os.environ.get("WKST_NO_DASHBOARD"):
+        return False
+    try:
+        from wkst import dashboard
+    except ImportError:
+        return False
+    dashboard.launch(ctx.obj["repo_root"], ctx.obj["platform"])
+    return True
+
+
 def _run_main_menu(ctx: click.Context) -> None:
     from wkst.install_menu import choose_main_action
 
     action = choose_main_action()
     if action == "install":
-        from wkst.commands import install as cmd
+        from wkst.commands import install as install_cmd
 
-        cmd.run(
+        install_cmd.run(
             repo_root=ctx.obj["repo_root"],
             platform_info=ctx.obj["platform"],
             groups=None,
@@ -84,9 +104,9 @@ def _run_main_menu(ctx: click.Context) -> None:
             customize_only=False,
         )
     if action == "update":
-        from wkst.commands import update as cmd
+        from wkst.commands import update as update_cmd
 
-        cmd.run(
+        update_cmd.run(
             repo_root=ctx.obj["repo_root"],
             platform_info=ctx.obj["platform"],
             groups=None,
@@ -95,9 +115,9 @@ def _run_main_menu(ctx: click.Context) -> None:
             dry_run=False,
         )
     if action == "customize_install":
-        from wkst.commands import install as cmd
+        from wkst.commands import install as install_cmd
 
-        cmd.run(
+        install_cmd.run(
             repo_root=ctx.obj["repo_root"],
             platform_info=ctx.obj["platform"],
             groups=None,
@@ -107,9 +127,9 @@ def _run_main_menu(ctx: click.Context) -> None:
             customize_only=True,
         )
     if action == "uninstall":
-        from wkst.commands import uninstall as cmd
+        from wkst.commands import uninstall as uninstall_cmd
 
-        cmd.run(
+        uninstall_cmd.run(
             repo_root=ctx.obj["repo_root"],
             platform_info=ctx.obj["platform"],
             groups=None,
@@ -226,6 +246,24 @@ def doctor(ctx: click.Context) -> None:
 
 
 @main.command()
+@click.pass_context
+def dashboard(ctx: click.Context) -> None:
+    """Open the full-screen interactive dashboard (browse, select, install)."""
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        from wkst import render
+
+        render.print_failure(
+            "dashboard needs an interactive terminal",
+            ["stdin/stdout are not a TTY."],
+            hint="run `wkst dashboard` from a terminal, or use `wkst install --no-menu`",
+        )
+        sys.exit(2)
+    from wkst import dashboard as cmd
+
+    sys.exit(cmd.launch(ctx.obj["repo_root"], ctx.obj["platform"]))
+
+
+@main.command()
 @click.option(
     "--adopt",
     "adopt_path",
@@ -234,9 +272,12 @@ def doctor(ctx: click.Context) -> None:
     help="Move a $HOME file into the repo and re-symlink it.",
 )
 @click.option("--force", is_flag=True, help="Backup and replace conflicting real files.")
+@click.option("--yes", is_flag=True, help="Do not prompt before --force replaces real files.")
 @click.option("--dry-run", is_flag=True, help="Show what would happen without doing it.")
 @click.pass_context
-def sync(ctx: click.Context, adopt_path: Path | None, force: bool, dry_run: bool) -> None:
+def sync(
+    ctx: click.Context, adopt_path: Path | None, force: bool, yes: bool, dry_run: bool
+) -> None:
     """Symlink dotfiles from the repo into $HOME (stow-style)."""
     from wkst.commands import sync as cmd
 
@@ -246,6 +287,7 @@ def sync(ctx: click.Context, adopt_path: Path | None, force: bool, dry_run: bool
         adopt_path=adopt_path,
         force=force,
         dry_run=dry_run,
+        yes=yes,
     )
 
 
@@ -279,9 +321,12 @@ def add(ctx: click.Context, paths: tuple[Path, ...], dry_run: bool) -> None:
     is_flag=True,
     help="Delete the file from the repo AND $HOME (you lose the content).",
 )
+@click.option("--yes", is_flag=True, help="Do not prompt before --purge deletes files.")
 @click.option("--dry-run", is_flag=True, help="Show what would happen without doing it.")
 @click.pass_context
-def remove(ctx: click.Context, paths: tuple[Path, ...], purge: bool, dry_run: bool) -> None:
+def remove(
+    ctx: click.Context, paths: tuple[Path, ...], purge: bool, yes: bool, dry_run: bool
+) -> None:
     """Detach $HOME files/dirs from the repo (inverse of ``wkst add``).
 
     Default: replace each managed symlink in $HOME with the real file from
@@ -306,6 +351,7 @@ def remove(ctx: click.Context, paths: tuple[Path, ...], purge: bool, dry_run: bo
         paths=paths,
         purge=purge,
         dry_run=dry_run,
+        yes=yes,
     )
 
 

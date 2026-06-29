@@ -208,7 +208,6 @@
       "type": "prompt"
     }
   ],
-  "console_title_template": "{{ .Shell }} in {{ .Folder }}",
   "transient_prompt": {
     "foreground": "#c6a0f6",
     "background": "transparent",

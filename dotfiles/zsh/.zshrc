@@ -314,10 +314,6 @@ alias ff='fzf'
 alias gsearch='rg'
 alias grep='rg'
 
-# Clear screen + greeter
-alias c='clear; command -v fastfetch >/dev/null && fastfetch'
-alias cl='clear'
-
 # System
 alias path='echo -e ${PATH//:/\\n}'
 alias now='date +"%T"'
@@ -755,13 +751,27 @@ if _wkst_show_greeter; then
     echo "\033[1;34m$(git branch --show-current 2>/dev/null)\033[0m"
   fi
 
+  # Rotating discovery tip — surface one lesser-known helper each session.
+  # See docs/terminal-command-discovery.md for the full reference.
+  local -a _wkst_tips=(
+    "Press Ctrl-G for navi cheats, or ask in plain English: howto <what you want>"
+    "Fuzzy-switch git branches: gbr   (or gco with no args)"
+    "Jump to a frecent dir: z <name>   ·   pick interactively: zi"
+    "Shell into a pod: ksh   ·   tail pod logs: klf   ·   switch context: kctx"
+    "Kill a process interactively: fkill"
+    "Find & edit with preview: fv   ·   find & cd: fcd   ·   make+enter dir: mkcd"
+    "Quick examples for any tool: tldr <cmd>   ·   from the web: cheat <cmd>"
+    "Full command tour: wkst help   ·   reference: docs/terminal-command-discovery.md"
+  )
+  echo "\033[2;37m💡 ${_wkst_tips[$((RANDOM % ${#_wkst_tips[@]} + 1))]}\033[0m"
+
   echo
 fi
 
 # ==================================================
 # VI MODE CURSOR CONTROL
 # ==================================================
-# Change cursor shape based on vi mode
+# Change cursor shape based on vi mode (beam in insert, block in command).
 function _cursor_update() {
   if [[ $KEYMAP == vicmd ]]; then
     printf '\e[2 q'   # block cursor in command mode
@@ -786,6 +796,32 @@ function zle-line-finish {
 zle -N zle-keymap-select
 zle -N zle-line-init
 zle -N zle-line-finish
+
+# ==================================================
+# CONTEXT-RICH TERMINAL / TAB TITLE
+# ==================================================
+# Window title (OSC 2): "<pwd> · <git branch> · ⎈ <k8s context>" so the context
+# stays visible when the terminal is unfocused. Tab title (OSC 1): just the dir
+# name. oh-my-posh's own title is disabled (console_title_template removed from
+# base.json) so there is a single writer. Registered after oh-my-posh init so it
+# wins the precmd ordering. Interactive shells only.
+function _wkst_set_title() {
+  [[ -o interactive ]] || return
+  local dir="${PWD/#$HOME/~}"
+  local parts="$dir"
+  local branch
+  branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
+  [[ -n "$branch" ]] && parts="${parts}  ${branch}"
+  if command -v kubectl >/dev/null 2>&1; then
+    local ctx
+    ctx="$(kubectl config current-context 2>/dev/null)"
+    [[ -n "$ctx" ]] && parts="${parts}  ⎈ ${ctx}"
+  fi
+  printf '\e]2;%s\a' "$parts"      # window title
+  printf '\e]1;%s\a' "${dir:t}"    # tab/icon title
+}
+typeset -ag precmd_functions
+precmd_functions+=(_wkst_set_title)
 
 # ==================================================
 # ATUIN CONFIGURATION

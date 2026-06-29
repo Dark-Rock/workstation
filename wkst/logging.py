@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import Callable
 from datetime import datetime
 from enum import IntEnum
 from typing import TextIO
@@ -51,9 +52,24 @@ class Logger:
         self.level = level
         self.stream = stream or sys.stderr
         self._color = _color_enabled(self.stream)
+        # Optional sink that takes over emission (e.g. a rich live region routes
+        # log lines through its console so they don't tear the progress bar).
+        self._writer: Callable[[str], None] | None = None
 
     def set_level(self, level: Level) -> None:
         self.level = level
+
+    def set_writer(self, writer: Callable[[str], None]) -> None:
+        """Route emitted lines through ``writer`` instead of ``self.stream``.
+
+        Used by the rich progress layer to keep log output and the live region
+        from corrupting each other. Pair with :meth:`reset_writer`.
+        """
+        self._writer = writer
+
+    def reset_writer(self) -> None:
+        """Restore direct-to-stream emission."""
+        self._writer = None
 
     def _emit(self, level: Level, msg: str) -> None:
         if level < self.level:
@@ -65,7 +81,10 @@ class Logger:
             line = f"[{ts}] {color}{label}{_RESET}: {msg}"
         else:
             line = f"[{ts}] {label}: {msg}"
-        print(line, file=self.stream, flush=True)
+        if self._writer is not None:
+            self._writer(line)
+        else:
+            print(line, file=self.stream, flush=True)
 
     def debug(self, msg: str) -> None:
         self._emit(Level.DEBUG, msg)
