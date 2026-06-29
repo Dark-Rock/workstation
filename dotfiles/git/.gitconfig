@@ -1,0 +1,55 @@
+[core]
+    pager = delta
+	autocrlf = input
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true    # use n and N to move between diff sections
+    light = false      # set to true if you're in a terminal w/ a light background color
+    side-by-side = true
+    line-numbers = true
+    syntax-theme = Catppuccin-macchiato
+    features = catppuccin-macchiato
+
+[delta "catppuccin-macchiato"]
+    # Catppuccin Macchiato theme colors
+    commit-decoration-style = bold yellow box
+    file-style = bold yellow
+    file-decoration-style = yellow ul
+    file-added-label = [+]
+    file-copied-label = [==]
+    file-modified-label = [*]
+    file-removed-label = [-]
+    file-renamed-label = [->]
+    hunk-header-decoration-style = cyan box
+    hunk-header-file-style = magenta
+    hunk-header-line-number-style = cyan
+    hunk-header-style = file line-number syntax
+    line-numbers-left-style = cyan
+    line-numbers-right-style = cyan
+    line-numbers-minus-style = red
+    line-numbers-plus-style = green
+    line-numbers-zero-style = "#a5adcb"
+    minus-style = syntax "#3c2d3a"
+    minus-emph-style = syntax "#5a3e51"
+    minus-non-emph-style = syntax auto
+    plus-style = syntax "#2d3e2d"
+    plus-emph-style = syntax "#3e5a3e"
+    plus-non-emph-style = syntax auto
+    zero-style = syntax "#24273a"
+    blame-palette = "#24273a #1e2030 #181926"
+
+[merge]
+    conflictstyle = diff3
+
+[diff]
+    colorMoved = default
+
+# Keep machine/user identity outside this reusable repo. Create this file on
+# each machine with:
+#   git config --file ~/.gitconfig.local user.name "Your Name"
+#   git config --file ~/.gitconfig.local user.email "you@example.com"
+[include]
+    path = ~/.gitconfig.local

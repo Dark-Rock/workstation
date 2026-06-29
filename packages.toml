@@ -1,0 +1,1027 @@
+# =============================================================================
+# wkst package manifest — single source of truth for cross-platform tooling.
+#
+# Each [[package]] declares per-backend identifiers. wkst picks the preferred
+# backend per platform (see wkst.manifest.BACKEND_PRIORITY).
+#
+# Schema:
+#   name         (required) Logical tool name
+#   binary       Executable name on PATH (defaults to `name`); used by `wkst doctor`
+#   groups       List of group tags; consumed by `wkst install --groups=...`
+#   platforms    Restrict to ["macos"] or ["linux-debian"] (default: both)
+#   exclude_variants  Skip on platform variants such as ["wsl"]
+#   description  Short human description
+#   brew         Homebrew formula or cask name
+#   brew_type    "formula" (default) or "cask"
+#   apt          APT package name
+#   cargo        cargo install crate name (used as fallback)
+#   npm          npm install -g name (used as fallback)
+#   pipx         pipx install name (used as fallback)
+# =============================================================================
+
+[meta]
+description = "Cross-platform workstation manifest"
+updated = "2026-06-28"
+
+[profiles]
+# User-facing install menu presets. Keep these as group lists so adding/removing
+# packages only needs package-level group tagging.
+minimal = ["core", "shell", "terminal", "search", "git"]
+developer = ["core", "languages", "shell", "terminal", "search", "git", "editor", "quality", "dev"]
+sre = ["core", "languages", "shell", "terminal", "search", "git", "editor", "quality", "dev", "k8s", "containers", "system", "api", "db", "secrets", "iac"]
+full = ["*"]
+
+# -----------------------------------------------------------------------------
+# core: required for everything else (incl. languages bootstrapped before
+# per-language backends run)
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "git"
+brew = "git"
+apt = "git"
+groups = ["core"]
+
+[[package]]
+name = "curl"
+brew = "curl"
+apt = "curl"
+groups = ["core"]
+
+[[package]]
+name = "jq"
+brew = "jq"
+apt = "jq"
+groups = ["core"]
+
+[[package]]
+name = "yq"
+brew = "yq"
+apt = "yq"
+groups = ["core"]
+
+[[package]]
+name = "unzip"
+brew = "unzip"
+apt = "unzip"
+groups = ["core"]
+
+[[package]]
+name = "wget"
+brew = "wget"
+apt = "wget"
+groups = ["core"]
+
+[[package]]
+name = "node"
+binary = "node"
+brew = "node"
+apt = "nodejs"
+groups = ["core", "languages"]
+
+[[package]]
+name = "npm"
+binary = "npm"
+brew = "node"                  # bundled with brew node on macOS
+apt = "npm"
+groups = ["core", "languages"]
+
+[[package]]
+name = "python3"
+binary = "python3"
+brew = "python"
+apt = "python3"
+groups = ["core", "languages"]
+
+[[package]]
+name = "pipx"
+binary = "pipx"
+brew = "pipx"
+apt = "pipx"
+groups = ["core", "languages"]
+
+[[package]]
+name = "go"
+binary = "go"
+brew = "go"
+apt = "golang"
+groups = ["core", "languages"]
+
+[[package]]
+name = "rustup"
+binary = "rustup"
+brew = "rustup"
+groups = ["core", "languages"]
+platforms = ["macos"]          # Linux: installed via wkst.bootstrap.ensure_rustup
+
+[[package]]
+name = "luarocks"
+brew = "luarocks"
+apt = "luarocks"
+groups = ["languages"]
+
+# -----------------------------------------------------------------------------
+# shell: zsh + completions + prompt + history
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "zsh"
+brew = "zsh"
+apt = "zsh"
+groups = ["shell"]
+
+[[package]]
+name = "zsh-completions"
+brew = "zsh-completions"
+groups = ["shell"]
+platforms = ["macos"]
+
+[[package]]
+name = "zsh-autosuggestions"
+apt = "zsh-autosuggestions"
+groups = ["shell"]
+platforms = ["linux-debian"]
+
+[[package]]
+name = "zsh-syntax-highlighting"
+apt = "zsh-syntax-highlighting"
+groups = ["shell"]
+platforms = ["linux-debian"]
+
+[[package]]
+name = "oh-my-posh"
+binary = "oh-my-posh"
+brew = "jandedobbeleer/oh-my-posh/oh-my-posh"
+groups = ["shell"]
+platforms = ["macos"]                         # Linux: installed via wkst.bootstrap.ensure_oh_my_posh
+
+[[package]]
+name = "atuin"
+brew = "atuin"
+apt = "atuin"
+groups = ["shell"]
+
+[[package]]
+name = "zoxide"
+brew = "zoxide"
+apt = "zoxide"
+groups = ["shell"]
+
+[[package]]
+name = "direnv"
+brew = "direnv"
+apt = "direnv"
+groups = ["shell"]
+
+[[package]]
+name = "navi"
+brew = "navi"
+cargo = "navi"
+groups = ["shell"]
+description = "Interactive cheatsheet tool — fuzzy 'what do I want to do' -> command"
+
+# -----------------------------------------------------------------------------
+# terminal: emulator + multiplexer + system info
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "ghostty"
+brew = "ghostty"
+brew_type = "cask"
+groups = ["terminal"]
+platforms = ["macos"]
+
+[[package]]
+name = "tmux"
+brew = "tmux"
+apt = "tmux"
+groups = ["terminal"]
+
+[[package]]
+name = "fastfetch"
+brew = "fastfetch"
+apt = "fastfetch"
+groups = ["terminal"]
+
+# -----------------------------------------------------------------------------
+# search & file: ripgrep, fd, fzf, bat, eza, tree-ish utilities
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "ripgrep"
+binary = "rg"
+brew = "ripgrep"
+apt = "ripgrep"
+groups = ["search"]
+
+[[package]]
+name = "fd"
+binary = "fd"
+brew = "fd"
+apt = "fd-find"     # apt installs as `fdfind`; .zshrc aliases it
+groups = ["search"]
+
+[[package]]
+name = "fzf"
+brew = "fzf"
+apt = "fzf"
+groups = ["search"]
+
+[[package]]
+name = "bat"
+brew = "bat"
+apt = "bat"
+groups = ["search"]
+
+[[package]]
+name = "eza"
+brew = "eza"
+cargo = "eza"       # apt has no eza; fall back to cargo on Linux
+groups = ["search"]
+
+[[package]]
+name = "tree"
+brew = "tree"
+apt = "tree"
+groups = ["search"]
+
+[[package]]
+name = "lnav"
+brew = "lnav"
+apt = "lnav"
+groups = ["search"]
+
+# -----------------------------------------------------------------------------
+# git: lazygit, delta, gh, ast-grep
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "lazygit"
+brew = "lazygit"
+apt = "lazygit"
+groups = ["git"]
+
+[[package]]
+name = "git-delta"
+binary = "delta"
+brew = "git-delta"
+apt = "git-delta"
+groups = ["git"]
+
+[[package]]
+name = "gh"
+brew = "gh"
+apt = "gh"
+groups = ["git"]
+
+[[package]]
+name = "ast-grep"
+binary = "ast-grep"
+brew = "ast-grep"
+cargo = "ast-grep"
+groups = ["git"]
+
+# -----------------------------------------------------------------------------
+# kubernetes & containers
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "kubectl"
+brew = "kubectl"
+apt = "kubectl"
+groups = ["k8s"]
+
+[[package]]
+name = "kubectx"
+brew = "kubectx"
+apt = "kubectx"
+groups = ["k8s"]
+
+[[package]]
+name = "helm"
+brew = "helm"
+apt = "helm"
+groups = ["k8s"]
+
+[[package]]
+name = "k9s"
+brew = "k9s"
+apt = "k9s"
+groups = ["k8s"]
+
+[[package]]
+name = "kind"
+brew = "kind"
+groups = ["k8s"]
+platforms = ["macos"]
+
+[[package]]
+name = "stern"
+brew = "stern"
+groups = ["k8s"]
+platforms = ["macos"]
+
+[[package]]
+name = "kustomize"
+brew = "kustomize"
+groups = ["k8s"]
+platforms = ["macos"]
+
+[[package]]
+name = "kubecolor"
+brew = "kubecolor"
+groups = ["k8s"]
+platforms = ["macos"]
+
+[[package]]
+name = "popeye"
+brew = "popeye"
+groups = ["k8s"]
+platforms = ["macos"]
+
+[[package]]
+name = "kubeconform"
+brew = "kubeconform"
+groups = ["k8s"]
+platforms = ["macos"]
+
+[[package]]
+name = "kube-linter"
+binary = "kube-linter"
+brew = "kube-linter"
+groups = ["k8s", "quality"]
+platforms = ["macos"]
+
+[[package]]
+name = "krew"
+binary = "kubectl-krew"
+brew = "krew"
+groups = ["k8s"]
+platforms = ["macos"]
+
+[[package]]
+name = "dive"
+brew = "dive"
+groups = ["containers"]
+platforms = ["macos"]
+
+[[package]]
+name = "lazydocker"
+brew = "lazydocker"
+groups = ["containers"]
+platforms = ["macos"]
+
+[[package]]
+name = "trivy"
+brew = "trivy"
+groups = ["containers"]
+platforms = ["macos"]
+
+[[package]]
+name = "docker.io"
+binary = "docker"
+apt = "docker.io"
+groups = ["containers"]
+platforms = ["linux-debian"]
+exclude_variants = ["wsl"]       # WSL should use Docker Desktop integration when available
+
+# -----------------------------------------------------------------------------
+# system monitoring & networking
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "btop"
+brew = "btop"
+apt = "btop"
+groups = ["system"]
+
+[[package]]
+name = "duf"
+brew = "duf"
+groups = ["system"]
+platforms = ["macos"]
+
+[[package]]
+name = "dust"
+binary = "dust"
+brew = "dust"
+cargo = "du-dust"
+groups = ["system"]
+
+[[package]]
+name = "hyperfine"
+brew = "hyperfine"
+cargo = "hyperfine"
+groups = ["system"]
+
+[[package]]
+name = "gping"
+brew = "gping"
+cargo = "gping"
+groups = ["system"]
+
+[[package]]
+name = "doggo"
+brew = "doggo"
+groups = ["system"]
+platforms = ["macos"]
+
+[[package]]
+name = "nmap"
+brew = "nmap"
+apt = "nmap"
+groups = ["system"]
+
+[[package]]
+name = "htop"
+brew = "htop"
+apt = "htop"
+groups = ["system"]
+
+# -----------------------------------------------------------------------------
+# api & networking
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "grpcurl"
+brew = "grpcurl"
+groups = ["api"]
+platforms = ["macos"]
+
+[[package]]
+name = "grpcui"
+brew = "grpcui"
+groups = ["api"]
+platforms = ["macos"]
+
+[[package]]
+name = "websocat"
+brew = "websocat"
+cargo = "websocat"
+groups = ["api"]
+
+# -----------------------------------------------------------------------------
+# secrets & config
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "sops"
+brew = "sops"
+groups = ["secrets"]
+platforms = ["macos"]
+
+[[package]]
+name = "just"
+brew = "just"
+cargo = "just"
+groups = ["dev"]
+
+# -----------------------------------------------------------------------------
+# editor & ai
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "neovim"
+binary = "nvim"
+brew = "neovim"
+apt = "neovim"
+groups = ["editor"]
+
+[[package]]
+name = "vim"
+brew = "vim"
+apt = "vim"
+groups = ["editor"]
+
+[[package]]
+name = "claude-code"
+binary = "claude"
+npm = "@anthropic-ai/claude-code"
+groups = ["editor", "ai"]
+
+[[package]]
+name = "hermes-agent"
+brew = "hermes-agent"
+groups = ["editor", "ai"]
+platforms = ["macos"]
+
+[[package]]
+name = "tree-sitter-cli"
+binary = "tree-sitter"
+brew = "tree-sitter"
+npm = "tree-sitter-cli"
+groups = ["editor"]
+
+[[package]]
+name = "lua-language-server"
+binary = "lua-language-server"
+brew = "lua-language-server"
+groups = ["editor", "dev"]
+platforms = ["macos"]
+
+[[package]]
+name = "helm-ls"
+binary = "helm_ls"
+brew = "helm-ls"
+groups = ["editor", "k8s"]
+platforms = ["macos"]
+
+[[package]]
+name = "mypy"
+binary = "mypy"
+brew = "mypy"
+apt = "mypy"
+pipx = "mypy"
+groups = ["quality", "dev"]
+
+[[package]]
+name = "pyright"
+binary = "pyright"
+npm = "pyright"
+groups = ["quality", "dev"]
+
+[[package]]
+name = "ruff"
+binary = "ruff"
+brew = "ruff"
+pipx = "ruff"
+groups = ["quality", "dev"]
+
+[[package]]
+name = "black"
+binary = "black"
+brew = "black"
+apt = "black"
+pipx = "black"
+groups = ["quality", "dev"]
+
+[[package]]
+name = "stylua"
+binary = "stylua"
+brew = "stylua"
+groups = ["quality", "dev", "editor"]
+platforms = ["macos"]
+
+# -----------------------------------------------------------------------------
+# code quality & formatting
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "prettier"
+brew = "prettier"
+npm = "prettier"
+groups = ["quality"]
+
+[[package]]
+name = "markdownlint-cli2"
+brew = "markdownlint-cli2"
+npm = "markdownlint-cli2"
+groups = ["quality"]
+
+[[package]]
+name = "sqlfluff"
+brew = "sqlfluff"
+pipx = "sqlfluff"
+groups = ["quality"]
+
+[[package]]
+name = "shellcheck"
+brew = "shellcheck"
+apt = "shellcheck"
+groups = ["quality"]
+
+[[package]]
+name = "yamllint"
+brew = "yamllint"
+apt = "yamllint"
+pipx = "yamllint"
+groups = ["quality"]
+
+[[package]]
+name = "pre-commit"
+brew = "pre-commit"
+apt = "pre-commit"
+pipx = "pre-commit"
+groups = ["quality", "dev"]
+
+[[package]]
+name = "actionlint"
+brew = "actionlint"
+groups = ["quality", "dev"]
+platforms = ["macos"]
+
+[[package]]
+name = "dos2unix"
+brew = "dos2unix"
+apt = "dos2unix"
+groups = ["quality"]
+
+[[package]]
+name = "taplo"
+brew = "taplo"
+cargo = "taplo-cli"
+groups = ["quality", "dev"]
+description = "TOML formatter and language server"
+
+[[package]]
+name = "shfmt"
+brew = "shfmt"
+apt = "shfmt"
+groups = ["quality"]
+description = "Shell script formatter"
+
+[[package]]
+name = "gitleaks"
+brew = "gitleaks"
+groups = ["quality", "secrets"]
+platforms = ["macos"]
+description = "Detect hardcoded secrets in Git repositories"
+
+# -----------------------------------------------------------------------------
+# documents
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "pandoc"
+brew = "pandoc"
+apt = "pandoc"
+groups = ["docs"]
+
+[[package]]
+name = "tectonic"
+brew = "tectonic"
+groups = ["docs"]
+platforms = ["macos"]
+
+[[package]]
+name = "mermaid-cli"
+binary = "mmdc"
+brew = "mermaid-cli"
+npm = "@mermaid-js/mermaid-cli"
+groups = ["docs"]
+
+[[package]]
+name = "imagemagick"
+binary = "magick"
+brew = "imagemagick"
+apt = "imagemagick"
+groups = ["docs"]
+
+[[package]]
+name = "ghostscript"
+binary = "gs"
+brew = "ghostscript"
+apt = "ghostscript"
+groups = ["docs"]
+
+# -----------------------------------------------------------------------------
+# rust cli toys (also resolvable via cargo on either OS)
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "bottom"
+binary = "btm"
+brew = "bottom"
+cargo = "bottom"
+groups = ["system"]
+
+[[package]]
+name = "tokei"
+brew = "tokei"
+cargo = "tokei"
+groups = ["dev"]
+
+[[package]]
+name = "vivid"
+brew = "vivid"
+cargo = "vivid"
+groups = ["shell"]
+
+[[package]]
+name = "tealdeer"
+binary = "tldr"
+brew = "tealdeer"
+cargo = "tealdeer"
+groups = ["search"]
+
+[[package]]
+name = "cargo-update"
+binary = "cargo-install-update"
+brew = "cargo-update"
+cargo = "cargo-update"
+groups = ["dev", "languages"]
+
+# -----------------------------------------------------------------------------
+# 2026 modernization — diagnostics, data, API, security, IaC, DB clients.
+# Convention: brew-only Go/C tools are macOS-scoped (matching trivy/dive/etc.);
+# Rust tools carry a cargo fallback and Python tools a pipx fallback so Linux
+# installs still resolve a backend (enforced by tests/test_invariants.py).
+# -----------------------------------------------------------------------------
+
+# kubernetes diagnostics
+[[package]]
+name = "k8sgpt"
+brew = "k8sgpt"
+groups = ["k8s"]
+platforms = ["macos"]
+description = "AI-powered Kubernetes cluster diagnostics (has an MCP server)"
+
+[[package]]
+name = "kubeshark"
+brew = "kubeshark"
+groups = ["k8s"]
+platforms = ["macos"]
+description = "eBPF-powered Kubernetes network observability (tcpdump for k8s)"
+
+# api & load testing
+[[package]]
+name = "xh"
+brew = "xh"
+cargo = "xh"
+groups = ["api"]
+description = "Fast, friendly HTTP client (HTTPie-compatible, Rust)"
+
+[[package]]
+name = "hurl"
+brew = "hurl"
+cargo = "hurl"
+groups = ["api"]
+description = "Run and assert HTTP requests from plain-text files"
+
+[[package]]
+name = "oha"
+brew = "oha"
+cargo = "oha"
+groups = ["api", "perf"]
+description = "HTTP load generator with a live TUI"
+
+[[package]]
+name = "k6"
+brew = "k6"
+groups = ["api", "perf"]
+platforms = ["macos"]
+description = "Scriptable load testing tool (Grafana k6)"
+
+# data wrangling
+[[package]]
+name = "jless"
+brew = "jless"
+cargo = "jless"
+groups = ["search"]
+description = "Vim-style terminal JSON/YAML viewer"
+
+[[package]]
+name = "dasel"
+brew = "dasel"
+groups = ["search"]
+platforms = ["macos"]
+description = "Query/modify JSON, YAML, TOML, XML, CSV with one syntax"
+
+[[package]]
+name = "duckdb"
+brew = "duckdb"
+groups = ["search", "dev"]
+platforms = ["macos"]
+description = "In-process SQL OLAP over CSV/JSON/Parquet"
+
+[[package]]
+name = "csvlens"
+brew = "csvlens"
+cargo = "csvlens"
+groups = ["search"]
+description = "Terminal CSV viewer with search and filtering"
+
+# database clients
+[[package]]
+name = "pgcli"
+brew = "pgcli"
+pipx = "pgcli"
+groups = ["db"]
+description = "Postgres CLI with autocompletion and syntax highlighting"
+
+[[package]]
+name = "mycli"
+brew = "mycli"
+pipx = "mycli"
+groups = ["db"]
+description = "MySQL/MariaDB CLI with autocompletion and syntax highlighting"
+
+[[package]]
+name = "harlequin"
+brew = "harlequin"
+pipx = "harlequin"
+groups = ["db"]
+description = "Terminal SQL IDE (Postgres/MySQL/SQLite/DuckDB)"
+
+# supply-chain security
+[[package]]
+name = "syft"
+brew = "syft"
+groups = ["secrets", "quality"]
+platforms = ["macos"]
+description = "Generate SBOMs from container images and filesystems"
+
+[[package]]
+name = "grype"
+brew = "grype"
+groups = ["secrets", "quality"]
+platforms = ["macos"]
+description = "Vulnerability scanner for container images and filesystems"
+
+[[package]]
+name = "cosign"
+brew = "cosign"
+groups = ["secrets"]
+platforms = ["macos"]
+description = "Sign and verify container images and SBOMs"
+
+[[package]]
+name = "trufflehog"
+brew = "trufflehog"
+groups = ["secrets", "quality"]
+platforms = ["macos"]
+description = "Find and verify leaked credentials (live-credential check)"
+
+# infrastructure as code
+[[package]]
+name = "opentofu"
+binary = "tofu"
+brew = "opentofu"
+groups = ["iac", "dev"]
+platforms = ["macos"]
+description = "Open-source Terraform fork (Linux Foundation)"
+
+# git / diff
+[[package]]
+name = "difftastic"
+binary = "difft"
+brew = "difftastic"
+cargo = "difftastic"
+groups = ["git"]
+description = "Structural (syntax-aware) diff tool"
+
+[[package]]
+name = "gitui"
+brew = "gitui"
+cargo = "gitui"
+groups = ["git"]
+description = "Fast terminal UI for git"
+
+# system / network diagnostics
+[[package]]
+name = "procs"
+brew = "procs"
+cargo = "procs"
+groups = ["system"]
+description = "Modern replacement for ps"
+
+[[package]]
+name = "bandwhich"
+brew = "bandwhich"
+cargo = "bandwhich"
+groups = ["system"]
+description = "Per-process network bandwidth monitor"
+
+[[package]]
+name = "trippy"
+binary = "trip"
+brew = "trippy"
+cargo = "trippy"
+groups = ["system"]
+description = "Network diagnostic tool (traceroute + ping TUI)"
+
+[[package]]
+name = "termshark"
+brew = "termshark"
+groups = ["system"]
+platforms = ["macos"]
+description = "Terminal UI for tshark/Wireshark captures"
+
+[[package]]
+name = "croc"
+brew = "croc"
+groups = ["system"]
+platforms = ["macos"]
+description = "Secure file transfer between computers"
+
+# file / text utilities
+[[package]]
+name = "yazi"
+brew = "yazi"
+groups = ["search"]
+platforms = ["macos"]
+description = "Blazing-fast terminal file manager (async I/O)"
+
+[[package]]
+name = "sd"
+brew = "sd"
+cargo = "sd"
+groups = ["search"]
+description = "Intuitive find-and-replace (sed alternative)"
+
+[[package]]
+name = "hexyl"
+brew = "hexyl"
+cargo = "hexyl"
+groups = ["search"]
+description = "Command-line hex viewer"
+
+# shell — maintained Rust successor to thefuck (cargo-only; no brew formula)
+[[package]]
+name = "pay-respects"
+cargo = "pay-respects"
+groups = ["shell"]
+description = "Correct the previous console command (maintained thefuck successor)"
+
+# -----------------------------------------------------------------------------
+# macOS GUI apps (casks)
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "visual-studio-code"
+binary = "code"
+brew = "visual-studio-code"
+brew_type = "cask"
+groups = ["gui", "editor"]
+platforms = ["macos"]
+
+[[package]]
+name = "cursor"
+brew = "cursor"
+brew_type = "cask"
+groups = ["gui", "editor"]
+platforms = ["macos"]
+
+[[package]]
+name = "jetbrains-toolbox"
+brew = "jetbrains-toolbox"
+brew_type = "cask"
+groups = ["gui", "editor"]
+platforms = ["macos"]
+
+[[package]]
+name = "rectangle"
+brew = "rectangle"
+brew_type = "cask"
+groups = ["gui"]
+platforms = ["macos"]
+
+[[package]]
+name = "markedit"
+brew = "markedit"
+brew_type = "cask"
+groups = ["gui"]
+platforms = ["macos"]
+
+# -----------------------------------------------------------------------------
+# macOS Nerd Fonts (casks) — replaces the bundled fonts/ directory
+# -----------------------------------------------------------------------------
+
+[[package]]
+name = "font-jetbrains-mono-nerd-font"
+brew = "font-jetbrains-mono-nerd-font"
+brew_type = "cask"
+groups = ["fonts"]
+platforms = ["macos"]
+
+[[package]]
+name = "font-fira-code-nerd-font"
+brew = "font-fira-code-nerd-font"
+brew_type = "cask"
+groups = ["fonts"]
+platforms = ["macos"]
+
+[[package]]
+name = "font-meslo-lg-nerd-font"
+brew = "font-meslo-lg-nerd-font"
+brew_type = "cask"
+groups = ["fonts"]
+platforms = ["macos"]
+
+[[package]]
+name = "font-iosevka-nerd-font"
+brew = "font-iosevka-nerd-font"
+brew_type = "cask"
+groups = ["fonts"]
+platforms = ["macos"]
+
+[[package]]
+name = "font-victor-mono-nerd-font"
+brew = "font-victor-mono-nerd-font"
+brew_type = "cask"
+groups = ["fonts"]
+platforms = ["macos"]
+
+[[package]]
+name = "font-hack-nerd-font"
+brew = "font-hack-nerd-font"
+brew_type = "cask"
+groups = ["fonts"]
+platforms = ["macos"]
+
+# -----------------------------------------------------------------------------
+# Claude Code plugins (separate install path: `claude plugin install <name>`)
+# -----------------------------------------------------------------------------
+
+[plugins.claude]
+everything-claude-code = "marketplace"

@@ -1,0 +1,35 @@
+# Canonical Mason tool list — SINGLE SOURCE OF TRUTH.
+#
+# Consumed by BOTH:
+#   - lua/plugins/mason-tools.lua  (Neovim reads this at startup -> ensure_installed)
+#   - wkst/plugins.py              (headless `:MasonInstall` during `wkst install`)
+#
+# Format: one Mason package per line. Blank lines and `#` comments are ignored.
+# Keep this list in sync with the LazyVim extras enabled in lazyvim.json.
+
+# General Lua / shell tooling used by LazyVim and local config editing.
+lua-language-server
+stylua
+shfmt
+
+# Python stack. ruff does both linting AND formatting (black dropped).
+pyright
+ruff
+debugpy
+
+# Kubernetes / Helm support (lazyvim.plugins.extras.lang.helm).
+helm-ls
+
+# Shell tooling — fills the gap: bashls gives Bash completion/hover and surfaces
+# shellcheck diagnostics (SRE writes a lot of Bash).
+bash-language-server
+shellcheck
+
+# SQL linting/formatting (pairs with lang.sql + dadbod).
+sqlfluff
+
+# .NET support. We use the Roslyn LSP (via seblyng/roslyn.nvim, installed from
+# the community mason registry — see lua/plugins/dotnet.lua), so OmniSharp is
+# intentionally NOT listed here.
+csharpier
+netcoredbg

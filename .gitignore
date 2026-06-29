@@ -1,0 +1,26 @@
+**/.DS_Store
+
+# Python tooling
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editor / OS cruft
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Local secrets — never tracked (sourced by dotfiles/zsh/.zshrc)
+**/.secrets.zsh
+
+# Local agent/workspace state
+.hermes/
+.claude/
+
+# Per-machine Git identity included by dotfiles/git/.gitconfig
+.gitconfig.local

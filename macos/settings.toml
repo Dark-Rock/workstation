@@ -1,0 +1,192 @@
+# macOS system defaults — managed by ``wkst macos export``
+# Apply with:  wkst macos apply
+# Add or remove [[setting]] blocks to control which keys are tracked.
+
+[[setting]]
+domain      = "NSGlobalDomain"
+key         = "ApplePressAndHoldEnabled"
+value       = false
+type        = "bool"
+description = "Key repeat on hold (false=repeat keys, true=accent popup)"
+
+[[setting]]
+domain      = "NSGlobalDomain"
+key         = "KeyRepeat"
+value       = 2
+type        = "int"
+description = "Key repeat rate — lower is faster (system minimum: 2)"
+
+[[setting]]
+domain      = "NSGlobalDomain"
+key         = "InitialKeyRepeat"
+value       = 15
+type        = "int"
+description = "Delay before key repeat starts — lower is shorter"
+
+[[setting]]
+domain      = "NSGlobalDomain"
+key         = "AppleShowScrollBars"
+value       = "Always"
+type        = "string"
+description = "Scroll bar visibility: Always / Automatic / WhenScrolling"
+
+[[setting]]
+domain      = "NSGlobalDomain"
+key         = "NSAutomaticQuoteSubstitutionEnabled"
+value       = true
+type        = "bool"
+description = "Smart quotes"
+
+[[setting]]
+domain      = "NSGlobalDomain"
+key         = "NSAutomaticDashSubstitutionEnabled"
+value       = true
+type        = "bool"
+description = "Smart dashes"
+
+[[setting]]
+domain      = "NSGlobalDomain"
+key         = "NSAutomaticSpellingCorrectionEnabled"
+value       = true
+type        = "bool"
+description = "Auto-correct spelling"
+
+[[setting]]
+domain      = "NSGlobalDomain"
+key         = "NSDocumentSaveNewDocumentsToCloud"
+value       = false
+type        = "bool"
+description = "Save new documents to iCloud by default"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "autohide"
+value       = true
+type        = "bool"
+description = "Auto-hide the Dock"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "autohide-delay"
+value       = 0.0
+type        = "float"
+description = "Delay before Dock appears when auto-hidden (seconds)"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "autohide-time-modifier"
+value       = 0.5
+type        = "float"
+description = "Animation duration when Dock shows/hides"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "tilesize"
+value       = 57.0
+type        = "float"
+description = "Dock icon size in pixels"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "magnification"
+value       = true
+type        = "bool"
+description = "Magnify Dock icons on hover"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "largesize"
+value       = 128.0
+type        = "float"
+description = "Dock icon magnification size"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "minimize-to-application"
+value       = false
+type        = "bool"
+description = "Minimize windows into the application icon"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "show-recents"
+value       = false
+type        = "bool"
+description = "Show recently-used apps in the Dock"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "launchanim"
+value       = false
+type        = "bool"
+description = "Bounce animation when launching apps"
+
+[[setting]]
+domain      = "com.apple.dock"
+key         = "mineffect"
+value       = "genie"
+type        = "string"
+description = "Minimize animation: scale / genie"
+
+[[setting]]
+domain      = "com.apple.finder"
+key         = "ShowPathbar"
+value       = false
+type        = "bool"
+description = "Show path bar at the bottom of Finder windows"
+
+[[setting]]
+domain      = "com.apple.finder"
+key         = "ShowStatusBar"
+value       = true
+type        = "bool"
+description = "Show status bar at the bottom of Finder windows"
+
+[[setting]]
+domain      = "com.apple.finder"
+key         = "AppleShowAllFiles"
+value       = false
+type        = "bool"
+description = "Show hidden files (names starting with .)"
+
+[[setting]]
+domain      = "com.apple.finder"
+key         = "FXEnableExtensionChangeWarning"
+value       = false
+type        = "bool"
+description = "Warn when changing a file's extension"
+
+[[setting]]
+domain      = "com.apple.finder"
+key         = "FXPreferredViewStyle"
+value       = "icnv"
+type        = "string"
+description = "Default view: Nlsv=list, icnv=icon, clmv=column, Flwv=gallery"
+
+[[setting]]
+domain      = "com.apple.finder"
+key         = "FXDefaultSearchScope"
+value       = "SCev"
+type        = "string"
+description = "Default search scope: SCcf=current folder, SCev=everywhere"
+
+[[setting]]
+domain      = "com.apple.finder"
+key         = "_FXShowPosixPathInTitle"
+value       = false
+type        = "bool"
+description = "Show full POSIX path in Finder title bar"
+
+[[setting]]
+domain      = "com.apple.screensaver"
+key         = "askForPassword"
+value       = 1
+type        = "int"
+description = "Require password after screensaver activates (1=yes, 0=no)"
+
+[[setting]]
+domain      = "com.apple.screensaver"
+key         = "askForPasswordDelay"
+value       = 0
+type        = "int"
+description = "Seconds before password is required after screensaver starts"

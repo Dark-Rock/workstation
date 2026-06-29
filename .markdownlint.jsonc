@@ -1,0 +1,10 @@
+{
+  // Long-line rules are noisy on auto-generated tables; disable.
+  "MD013": false,
+  // Allow inline HTML in TOOLS.md / README.md if needed.
+  "MD033": false,
+  // Allow duplicate headings across nested files.
+  "MD024": { "siblings_only": true },
+  // Generated tables in TOOLS.md are compact and not manually aligned.
+  "MD060": false
+}
