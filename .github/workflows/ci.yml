@@ -13,7 +13,7 @@ jobs:
     name: lint + test (Python)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -47,7 +47,7 @@ jobs:
     name: gitleaks (secret scan)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # full history so a secret in any past commit is caught
       - name: Install gitleaks
@@ -63,7 +63,7 @@ jobs:
     name: shellcheck (bootstrap.sh)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: shellcheck
         uses: ludeeus/action-shellcheck@2.0.0
         with:
@@ -73,7 +73,7 @@ jobs:
     name: markdownlint (docs)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: markdownlint-cli2
         uses: DavidAnson/markdownlint-cli2-action@v17
         with:
@@ -86,7 +86,7 @@ jobs:
     name: actionlint (github workflows)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: actionlint
         uses: rhysd/actionlint@v1
 
@@ -94,7 +94,7 @@ jobs:
     name: bootstrap.sh (debian:12)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run bootstrap in container (apt prereqs only, no full install)
         run: |
           docker run --rm -v "$PWD":/repo -w /repo debian:12 bash -c '
@@ -111,7 +111,7 @@ jobs:
     name: bootstrap.sh (ubuntu:24.04)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run bootstrap in container (apt prereqs only, no full install)
         run: |
           docker run --rm -v "$PWD":/repo -w /repo ubuntu:24.04 bash -c '
