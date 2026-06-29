@@ -1,0 +1,125 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: lint + test (Python)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Ruff lint
+        run: uv run ruff check wkst/ tests/
+
+      - name: Ruff format check
+        run: uv run ruff format --check wkst/ tests/
+
+      - name: Pytest
+        run: uv run pytest tests/ -q
+
+      - name: Validate manifest
+        run: uv run wkst manifest validate
+
+      - name: Check generated TOOLS.md
+        run: |
+          uv run wkst manifest render-md > /tmp/TOOLS.md
+          diff -u TOOLS.md /tmp/TOOLS.md
+
+      - name: Smoke test (install --dry-run)
+        run: uv run wkst install --dry-run
+
+  gitleaks:
+    name: gitleaks (secret scan)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history so a secret in any past commit is caught
+      - name: Install gitleaks
+        run: |
+          version="8.30.1"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          sudo install gitleaks /usr/local/bin/gitleaks
+      - name: Scan working tree + git history
+        run: gitleaks detect --redact --no-banner --verbose
+
+  shellcheck:
+    name: shellcheck (bootstrap.sh)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          scandir: "."
+
+  markdown:
+    name: markdownlint (docs)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: markdownlint-cli2
+        uses: DavidAnson/markdownlint-cli2-action@v17
+        with:
+          globs: |
+            *.md
+            !dotfiles/claude/.claude/**
+            !.venv/**
+
+  actionlint:
+    name: actionlint (github workflows)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: actionlint
+        uses: rhysd/actionlint@v1
+
+  bootstrap-debian:
+    name: bootstrap.sh (debian:12)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run bootstrap in container (apt prereqs only, no full install)
+        run: |
+          docker run --rm -v "$PWD":/repo -w /repo debian:12 bash -c '
+            set -e
+            apt-get update -qq
+            apt-get install -y -qq curl ca-certificates sudo
+            export WKST_REPO_DIR=/repo
+            export WKST_SKIP_FINAL_INSTALL=1
+            bash bootstrap.sh
+            ls -la $HOME/.local/bin/uv
+          '
+
+  bootstrap-ubuntu:
+    name: bootstrap.sh (ubuntu:24.04)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run bootstrap in container (apt prereqs only, no full install)
+        run: |
+          docker run --rm -v "$PWD":/repo -w /repo ubuntu:24.04 bash -c '
+            set -e
+            apt-get update -qq
+            apt-get install -y -qq curl ca-certificates sudo
+            export WKST_REPO_DIR=/repo
+            export WKST_SKIP_FINAL_INSTALL=1
+            bash bootstrap.sh
+            ls -la $HOME/.local/bin/uv
+          '

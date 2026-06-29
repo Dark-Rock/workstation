@@ -1,0 +1,17 @@
+# navi configuration — see https://github.com/denisidoro/navi
+# Cheatsheets live alongside this file and are managed by config-workstation.
+cheats:
+  paths:
+    # Curated, repo-tracked workstation cheats (managed in dotfiles).
+    - ~/.config/navi/cheats
+    # Community cheat repos cloned by `wkst` (e.g. denisidoro/cheats) — the
+    # default navi data dir. Listing it explicitly is required because setting
+    # `paths` otherwise overrides navi's default and hides these.
+    - ~/.local/share/navi/cheats
+
+style:
+  tag_width: 22
+  comment_width: 62
+
+finder:
+  command: fzf

@@ -1,0 +1,73 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check wkst/ tests/
+        language: system
+        pass_filenames: false
+        types_or: [python, pyi]
+
+      - id: ruff-format
+        name: ruff format check
+        entry: uv run ruff format --check wkst/ tests/
+        language: system
+        pass_filenames: false
+        types_or: [python, pyi]
+
+      - id: pytest
+        name: pytest
+        entry: uv run pytest tests/ -q
+        language: system
+        pass_filenames: false
+        types: [python]
+
+      - id: manifest-validate
+        name: wkst manifest validate
+        entry: uv run wkst manifest validate
+        language: system
+        pass_filenames: false
+        files: ^(packages\.toml|wkst/|tests/)
+
+      - id: tools-docs-current
+        name: TOOLS.md matches packages.toml
+        entry: bash -c 'tmp="$(mktemp)"; uv run wkst manifest render-md > "$tmp"; diff -u TOOLS.md "$tmp"; rc=$?; rm -f "$tmp"; exit $rc'
+        language: system
+        pass_filenames: false
+        files: ^(packages\.toml|TOOLS\.md|wkst/commands/manifest\.py|wkst/manifest\.py)
+
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck bootstrap.sh
+        language: system
+        pass_filenames: false
+        files: ^bootstrap\.sh$
+
+      - id: shfmt
+        name: shfmt check
+        entry: shfmt -d bootstrap.sh
+        language: system
+        pass_filenames: false
+        files: ^bootstrap\.sh$
+
+      - id: taplo
+        name: taplo check
+        entry: taplo check packages.toml pyproject.toml
+        language: system
+        pass_filenames: false
+        files: ^(packages\.toml|pyproject\.toml)$

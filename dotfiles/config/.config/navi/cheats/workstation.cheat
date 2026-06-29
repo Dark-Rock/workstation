@@ -1,0 +1,214 @@
+% workstation: files & search, search
+
+# Find files by name (fast, respects .gitignore)
+fd <pattern>
+
+# Find files including hidden + ignored
+fd --hidden --no-ignore <pattern>
+
+# Find files by extension
+fd --extension <ext>
+
+# Find files larger than a size (e.g. 100m, 1g)
+fd --type f --size +<size>
+
+# Search file contents (ripgrep)
+rg <query>
+
+# Search contents, show only matching file names
+rg --files-with-matches <query>
+
+# Search and replace across files (interactive preview)
+grug-far
+
+# Interactively pick a file and open it in the editor
+nvim "$(fd --type f | fzf --preview 'bat --color=always {}')"
+
+# Browse the filesystem in a TUI file manager
+yazi
+
+# View a JSON file with vim-style navigation
+jless <file>
+
+# Pretty-print / query JSON
+jq '<filter>' <file>
+
+# Query JSON/YAML/TOML/XML/CSV with one tool
+dasel -f <file> '<selector>'
+
+# Show a file with syntax highlighting + git gutter
+bat <file>
+
+# Disk usage of the current tree, biggest first
+dust
+
+# Free space per filesystem
+duf
+
+% workstation: git, git
+
+# Open the interactive git TUI
+lazygit
+
+# Structural (syntax-aware) diff of two files
+difft <fileA> <fileB>
+
+# Browse branches and check one out (fuzzy)
+git switch "$(git branch --all | sed 's/[ *]//g;s#remotes/origin/##' | sort -u | fzf)"
+
+# Side-by-side diff + file history (diffview, inside nvim)
+nvim -c DiffviewOpen
+
+# Show what changed in a commit (fuzzy pick)
+git show "$(git log --oneline | fzf | awk '{print $1}')"
+
+# Create a PR / view repo on the host
+gh pr create --web
+
+# Undo the last commit but keep changes staged
+git reset --soft HEAD~1
+
+% workstation: kubernetes, k8s
+
+# Open the cluster TUI
+k9s
+
+# AI-explain what is broken in the cluster
+k8sgpt analyze --explain
+
+# Switch context (fuzzy)
+kubectx
+
+# Switch namespace (fuzzy)
+kubens
+
+# Tail logs across pods matching a selector
+stern <selector>
+
+# Capture L4/L7 traffic in the cluster (eBPF)
+kubeshark tap
+
+# Scan the cluster for issues
+popeye
+
+# Lint a manifest before applying
+kube-linter lint <path>
+
+# Validate manifests against the k8s schema
+kubeconform -summary <file>
+
+# Diff a manifest against the live cluster
+kubectl diff -f <file>
+
+# Get a shell in a pod (fuzzy pick)
+kubectl exec -it "$(kubectl get pods --no-headers | fzf | awk '{print $1}')" -- sh
+
+% workstation: containers, containers
+
+# Interactive docker TUI
+lazydocker
+
+# Inspect image layers and wasted space
+dive <image>
+
+# Scan an image for vulnerabilities
+trivy image <image>
+
+% workstation: system & processes, system
+
+# Live system monitor (CPU/mem/proc)
+btop
+
+# Modern process list (ps replacement)
+procs <filter>
+
+# Per-process network bandwidth
+sudo bandwhich
+
+# Ping with a live graph
+gping <host>
+
+# Traceroute + ping TUI
+sudo trip <host>
+
+# Benchmark a command (statistical)
+hyperfine '<command>'
+
+# Tail and navigate logs (SQL-like)
+lnav <logfile>
+
+# Interactively kill a process
+kill -9 "$(ps -ef | sed 1d | fzf | awk '{print $2}')"
+
+% workstation: network & api, api
+
+# Make an HTTP request (friendly curl)
+xh <method> <url>
+
+# Run + assert HTTP requests from a file
+hurl --test <file.hurl>
+
+# DNS lookup (modern dig)
+doggo <domain>
+
+# Call a gRPC endpoint (list services)
+grpcurl -plaintext <host_port> list
+
+# Quick HTTP load test
+oha -z 30s <url>
+
+# Scriptable load test
+k6 run <script.js>
+
+# What is my public IP
+curl -s ifconfig.me
+
+% workstation: data & databases, db
+
+# Run SQL over CSV/JSON/Parquet files in place
+duckdb -c "SELECT * FROM '<file>' LIMIT 10"
+
+# Postgres REPL with autocompletion
+pgcli <connection_string>
+
+# MySQL/MariaDB REPL with autocompletion
+mycli <connection_string>
+
+# Terminal SQL IDE
+harlequin <connection_string>
+
+% workstation: security & secrets, secrets
+
+# Scan a repo for leaked secrets
+gitleaks detect
+
+# Verify-scan for live credentials
+trufflehog filesystem <path>
+
+# Generate an SBOM for an image
+syft <image>
+
+# Vulnerability scan from an SBOM or image
+grype <image>
+
+# Verify a container image signature
+cosign verify <image>
+
+# Edit an encrypted secrets file in place
+sops <file>
+
+% workstation: discovery & help, help
+
+# Browse all workstation cheats (this menu)
+navi
+
+# Ask in plain English what command to run
+howto <question>
+
+# Quick reference for a command
+tldr <command>
+
+# Cheat sheet from cheat.sh
+curl -s "cheat.sh/<command>"
+
+$ question: echo "e.g. find files modified in the last day"

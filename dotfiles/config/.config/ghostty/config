@@ -1,0 +1,84 @@
+# ==================================================
+# APPEARANCE
+# ==================================================
+theme = Catppuccin Macchiato
+
+# Font configuration
+font-size = 16
+font-family = "FiraCode Nerd Font Mono"
+# Fira Code ligatures: stylistic sets + contextual alternates
+font-feature = ss01
+font-feature = ss02
+font-feature = ss03
+font-feature = ss05
+font-feature = calt
+
+# Transparency and blur
+background-blur-radius = 20
+background-opacity = 0.8
+
+# Window behavior
+window-decoration = auto
+window-save-state = always
+window-padding-x = 4
+window-padding-y = 4
+window-theme = auto
+
+# ==================================================
+# BEHAVIOR
+# ==================================================
+mouse-hide-while-typing = true
+macos-option-as-alt = true
+link-url = true
+confirm-close-surface = true
+
+# Shell integration (enables semantic zones, command tracking)
+shell-integration = detect
+shell-integration-features = cursor,sudo,title
+
+# Cursor - dynamic shape based on vi mode (beam in insert, block in command)
+cursor-style = bar
+cursor-style-blink = false
+
+# Scrollback
+scrollback-limit = 100000
+
+# Copy/paste behavior - manual copy only
+copy-on-select = false
+clipboard-trim-trailing-spaces = true
+
+# ==================================================
+# PERFORMANCE
+# ==================================================
+macos-non-native-fullscreen = true
+
+# ==================================================
+# KEYBINDINGS (SRE workflow optimized)
+# ==================================================
+# Split management (similar to tmux)
+keybind = super+shift+d=new_split:right
+keybind = super+ctrl+d=new_split:down
+keybind = super+w=close_surface
+
+# Tab management
+keybind = super+t=new_tab
+keybind = super+shift+]=next_tab
+keybind = super+shift+[=previous_tab
+
+# Pane navigation (vim-style with Cmd)
+keybind = super+h=goto_split:left
+keybind = super+j=goto_split:bottom
+keybind = super+k=goto_split:top
+keybind = super+l=goto_split:right
+
+# Quick access
+keybind = super+shift+c=reload_config
+keybind = super+equal=increase_font_size:1
+keybind = super+minus=decrease_font_size:1
+keybind = super+0=reset_font_size
+
+
+# ==================================================
+# WINDOW TITLE
+# ==================================================
+window-title-font-family = "FiraCode Nerd Font Mono"
