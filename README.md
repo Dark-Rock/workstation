@@ -52,8 +52,6 @@ After install, run `wkst` from anywhere:
 
 ```bash
 wkst help              # rich overview of every command + workflows
-wkst                   # bare command opens the full-screen dashboard (TTY)
-wkst dashboard         # open the dashboard explicitly
 wkst install           # interactive default-on installer (also self-repair)
 wkst install --no-menu # non-interactive full install for automation
 wkst install --profile=minimal  # install a named profile from packages.toml

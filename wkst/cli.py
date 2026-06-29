@@ -56,35 +56,15 @@ def main(ctx: click.Context, verbose: bool, quiet: bool) -> None:
     _augment_path(info)
     ctx.obj["platform"] = info
 
-    # Bare `wkst` in a terminal opens the full-screen dashboard when possible,
-    # falling back to the prompt-toolkit action menu on a dumb terminal or when
-    # Textual is unavailable. Non-interactive invocations keep the help overview
-    # so scripts do not hang on a TUI.
+    # Bare `wkst` in a terminal opens the interactive action menu. Non-interactive
+    # invocations keep the help overview so scripts do not hang on a TUI.
     if ctx.invoked_subcommand is None:
-        if sys.stdin.isatty() and sys.stdout.isatty() and _launch_dashboard(ctx):
-            return
         if sys.stdin.isatty():
             _run_main_menu(ctx)
         else:
             from wkst.commands import help as cmd
 
             cmd.show()
-
-
-def _launch_dashboard(ctx: click.Context) -> bool:
-    """Try to open the Textual dashboard. Return True if it handled the session.
-
-    Returns False (so the caller falls back to the menu) when the dashboard is
-    disabled via ``WKST_NO_DASHBOARD`` or Textual cannot be imported.
-    """
-    if os.environ.get("WKST_NO_DASHBOARD"):
-        return False
-    try:
-        from wkst import dashboard
-    except ImportError:
-        return False
-    dashboard.launch(ctx.obj["repo_root"], ctx.obj["platform"])
-    return True
 
 
 def _run_main_menu(ctx: click.Context) -> None:
@@ -243,24 +223,6 @@ def doctor(ctx: click.Context) -> None:
         platform_info=ctx.obj["platform"],
     )
     sys.exit(rc)
-
-
-@main.command()
-@click.pass_context
-def dashboard(ctx: click.Context) -> None:
-    """Open the full-screen interactive dashboard (browse, select, install)."""
-    if not (sys.stdin.isatty() and sys.stdout.isatty()):
-        from wkst import render
-
-        render.print_failure(
-            "dashboard needs an interactive terminal",
-            ["stdin/stdout are not a TTY."],
-            hint="run `wkst dashboard` from a terminal, or use `wkst install --no-menu`",
-        )
-        sys.exit(2)
-    from wkst import dashboard as cmd
-
-    sys.exit(cmd.launch(ctx.obj["repo_root"], ctx.obj["platform"]))
 
 
 @main.command()

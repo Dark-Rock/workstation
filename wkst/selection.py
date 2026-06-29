@@ -1,10 +1,10 @@
-"""Pure package-selection logic shared by the install menu and the dashboard.
+"""Pure package-selection logic for the install/update menu.
 
 This module holds the manifest-driven helpers that map high-level "tool
 sections" to package groups and resolve a chosen set of package names back into
 ``(groups, names)``. It has **no** dependency on prompt-toolkit, rich, or any
-interactive layer, so both the prompt-toolkit wizard (``install_menu``) and the
-Textual dashboard (``dashboard``) can reuse it without drift.
+interactive layer, so the selection logic stays unit-testable and decoupled from
+the ``install_menu`` UI.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ TOOL_SECTIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
 
 @dataclass(frozen=True)
 class InstallSelection:
-    """Interactive install/update selections (shared by menu and dashboard)."""
+    """Interactive install/update selections produced by the menu."""
 
     groups: list[str] | None
     package_names: list[str] | None

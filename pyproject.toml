@@ -10,7 +10,6 @@ dependencies = [
     "click>=8.1.7",
     "prompt-toolkit>=3.0.0",
     "rich>=13.7.0",
-    "textual>=0.60.0",
 ]
 
 [project.scripts]
