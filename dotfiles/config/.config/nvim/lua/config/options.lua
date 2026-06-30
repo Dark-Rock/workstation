@@ -28,6 +28,14 @@ opt.autowrite = true -- Auto-save before certain commands
 opt.confirm = true -- Prompt before closing unsaved files
 
 -- ==============================
+-- CLIPBOARD
+-- ==============================
+-- LazyVim defaults to `unnamedplus`, which makes normal deletes (`d`, `dd`,
+-- `x`, `c`) overwrite the system clipboard. Keep Vim's unnamed register local;
+-- explicit clipboard maps such as <C-x>, <leader>y, and <leader>p still use `+`.
+opt.clipboard = ""
+
+-- ==============================
 -- FORMATTING
 -- ==============================
 opt.formatoptions:append("cro") -- Auto-wrap comments

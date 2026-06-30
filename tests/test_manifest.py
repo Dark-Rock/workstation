@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from wkst import install_menu, selection
 from wkst.manifest import Manifest, ManifestError, load
 from wkst.platform import OS, Arch, PlatformInfo
 
@@ -67,6 +68,39 @@ def test_install_profiles_reference_existing_groups(manifest: Manifest) -> None:
             continue
         assert groups, f"profile {name}: must include at least one group"
         assert set(groups) <= known_groups
+
+
+def test_package_menu_sections_are_coarse(manifest: Manifest) -> None:
+    sections = selection.available_tool_sections(manifest)
+
+    assert [section_id for section_id, *_rest in sections] == [
+        "dev",
+        "ops",
+        "tools",
+        "misc",
+    ]
+    assert [name for _section_id, name, *_rest in sections] == [
+        "Dev",
+        "Ops",
+        "Tools",
+        "Misc",
+    ]
+
+
+def test_package_section_menus_partition_packages(manifest: Manifest) -> None:
+    sections = selection.available_tool_sections(manifest)
+    selected_sections = {section_id for section_id, *_rest in sections}
+
+    menu_packages = [
+        package.name
+        for section_id, *_rest in sections
+        for package in install_menu._packages_for_section_menu(
+            manifest, section_id, selected_sections, sections
+        )
+    ]
+
+    assert set(menu_packages) == {package.name for package in manifest.packages}
+    assert len(menu_packages) == len(set(menu_packages))
 
 
 def test_full_profile_means_all_groups(manifest: Manifest) -> None:

@@ -212,3 +212,93 @@ tldr <command>
 curl -s "cheat.sh/<command>"
 
 $ question: echo "e.g. find files modified in the last day"
+
+% workstation: shell helpers — git, wkst-git
+
+# Fuzzy-switch git branch (preview shows recent log)
+gbr
+
+# Smart checkout — no args opens an fzf branch picker
+gco
+
+# Commit all staged changes with a message, then push
+gcm <message>
+
+# Browse commits interactively (preview each diff)
+gfzf
+
+# Add a git worktree for a branch (sibling directory)
+gwt add <branch>
+
+# List existing git worktrees
+gwt list
+
+% workstation: shell helpers — kubernetes, wkst-k8s
+
+# Shell into a pod (fuzzy pick)
+ksh
+
+# Tail logs from a pod (fuzzy pick)
+klf
+
+# Switch kube context (fuzzy, with preview)
+kctx
+
+# Interactive port-forward — pick pod and port
+kpff
+
+# Get pods matching a label selector
+kgpl <selector>
+
+# Edit a kubernetes resource interactively (fuzzy pick)
+kedit
+
+% workstation: shell helpers — files & nav, wkst-files
+
+# Find a file and open it in the editor (bat preview)
+fv
+
+# Find a directory and cd into it (fuzzy)
+fcd
+
+# Make a directory (and parents) and cd into it
+mkcd <dir>
+
+# Extract any archive (tar, zip, 7z, rar, gz, …)
+extract <archive>
+
+# Shell into a running container (fuzzy pick)
+dsh
+
+$ archive: fd --type f --extension zip --extension tar --extension gz --extension tgz --extension bz2 --extension rar --extension 7z
+
+% workstation: shell helpers — bookmarks, wkst-marks
+
+# Bookmark the current directory (optionally name it)
+mark <name>
+
+# Jump to a bookmarked directory
+jump <name>
+
+# Remove a directory bookmark
+unmark <name>
+
+# List all directory bookmarks
+marks
+
+% workstation: shell helpers — utilities, wkst-util
+
+# Interactively pick and kill a process (fzf)
+fkill
+
+# Serve the current directory over HTTP (default port 8000)
+serve <port>
+
+# Show the weather for a location (or current by default)
+weather <location>
+
+# Fetch a cheat sheet from cheat.sh for a command
+cheat <command>
+
+# Ask in plain English what command to run (Claude)
+howto <question>

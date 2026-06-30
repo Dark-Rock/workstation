@@ -14,10 +14,9 @@ from dataclasses import dataclass
 from wkst.manifest import Manifest, Package
 from wkst.preferences import InstallPreferences
 
-# High-level groupings shown to the user. Each entry is
+# Package categories shown to the user. Each entry is
 # ``(section_id, display_name, description, member_groups)``.
 TOOL_SECTIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
-    ("core", "Core", "Base dependencies shared by the rest of the setup", ("core",)),
     (
         "dev",
         "Dev",
@@ -25,19 +24,23 @@ TOOL_SECTIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
         ("dev", "db", "languages", "api", "quality", "editor", "git"),
     ),
     (
-        "term",
-        "Term",
-        "Terminal, shell, search, navigation, and local system tooling",
-        ("terminal", "shell", "search", "system"),
-    ),
-    (
         "ops",
         "Ops",
         "Containers, Kubernetes, performance, IaC, and security tooling",
         ("containers", "k8s", "perf", "iac", "secrets"),
     ),
-    ("desktop", "Desktop", "GUI apps, fonts, and document utilities", ("gui", "fonts", "docs")),
-    ("ai", "AI", "AI assistants and coding-agent tools", ("ai",)),
+    (
+        "tools",
+        "Tools",
+        "Core, terminal, shell, search, and local system tools",
+        ("core", "terminal", "shell", "search", "system"),
+    ),
+    (
+        "misc",
+        "Misc",
+        "GUI apps, fonts, docs, AI, and other tools",
+        ("gui", "fonts", "docs", "ai"),
+    ),
 )
 
 
@@ -70,7 +73,12 @@ def available_tool_sections(
     grouped = {group for *_prefix, groups in sections for group in groups}
     misc_groups = tuple(sorted(known_groups - grouped))
     if misc_groups:
-        sections.append(("misc", "Misc", "Other tools", misc_groups))
+        for index, (section_id, name, description, groups) in enumerate(sections):
+            if section_id == "misc":
+                sections[index] = (section_id, name, description, (*groups, *misc_groups))
+                break
+        else:
+            sections.append(("misc", "Misc", "Other tools", misc_groups))
     return sections
 
 

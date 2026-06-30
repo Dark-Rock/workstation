@@ -201,10 +201,10 @@ def _choose_options_tui(
         has_options = include_preferences or (include_dotfiles and "dotfiles" in selected_setups)
         steps: list[str | tuple[str, str]] = ["phases"]
         if selected_package_phase:
-            steps.append("tools")
+            steps.append("package_categories")
             steps.extend(
-                ("package_group", group)
-                for group in _ordered_selected_groups(
+                ("package_section", section_id)
+                for section_id in _ordered_selected_package_sections(
                     available_tool_sections, selected_tool_sections, selected_groups
                 )
             )
@@ -242,10 +242,10 @@ def _choose_options_tui(
             step += 1
             continue
 
-        if current_step == "tools":
+        if current_step == "package_categories":
             result = checkbox_menu(
-                title="Tools",
-                help_text="Choose high-level tool sections for the package phase.",
+                title="Package categories",
+                help_text="Choose package categories to install/update.",
                 choices=[
                     (
                         section_id,
@@ -270,12 +270,17 @@ def _choose_options_tui(
             step += 1
             continue
 
-        if isinstance(current_step, tuple) and current_step[0] == "package_group":
-            group = current_step[1]
-            packages = _packages_for_group_menu(manifest, group, selected_groups)
+        if isinstance(current_step, tuple) and current_step[0] == "package_section":
+            section_id = current_step[1]
+            _section_id, section_name, _description, _section_groups = _section_by_id(
+                available_tool_sections, section_id
+            )
+            packages = _packages_for_section_menu(
+                manifest, section_id, selected_tool_sections, available_tool_sections
+            )
             result = checkbox_menu(
-                title=f"{_group_title(group)} packages",
-                help_text=f"Choose {group} packages to {package_action}.",
+                title=f"{section_name} packages",
+                help_text=f"Choose {section_name.lower()} packages to {package_action}.",
                 choices=[(package.name, _package_label(package)) for package in packages],
                 selected=selected_package_names & {package.name for package in packages},
             )
@@ -360,26 +365,32 @@ def _choose_options_tui(
     )
 
 
-def _packages_for_group_menu(
-    manifest: Manifest, group: str, selected_groups: set[str]
+def _packages_for_section_menu(
+    manifest: Manifest,
+    section_id: str,
+    selected_sections: set[str],
+    sections: list[tuple[str, str, str, tuple[str, ...]]],
 ) -> list[Package]:
+    section_groups = dict((item[0], item[3]) for item in sections)[section_id]
+    section_group_set = set(section_groups)
     return [
         package
         for package in manifest.packages
-        if group in package.groups
-        and _display_group_for_package(manifest, package, selected_groups) == group
+        if set(package.groups) & section_group_set
+        and _display_section_for_package(package, selected_sections, sections) == section_id
     ]
 
 
-def _display_group_for_package(
-    manifest: Manifest, package: Package, selected_groups: set[str]
+def _display_section_for_package(
+    package: Package,
+    selected_sections: set[str],
+    sections: list[tuple[str, str, str, tuple[str, ...]]],
 ) -> str | None:
-    group_order = {group: index for index, group in enumerate(manifest.all_groups())}
-    package_groups = sorted(
-        (group for group in package.groups if group in selected_groups),
-        key=lambda group: group_order.get(group, len(group_order)),
-    )
-    return package_groups[0] if package_groups else None
+    package_groups = set(package.groups)
+    for section_id, _name, _description, groups in sections:
+        if section_id in selected_sections and package_groups & set(groups):
+            return section_id
+    return None
 
 
 def _visible_setup_choices(setup_choices: list[str]) -> list[str]:
@@ -396,17 +407,27 @@ def _package_phase_label(package_action: str) -> str:
     return "Phase: install packages from manifest"
 
 
-def _ordered_selected_groups(
+def _ordered_selected_package_sections(
     sections: list[tuple[str, str, str, tuple[str, ...]]],
     selected_sections: set[str],
     selected_groups: set[str],
 ) -> list[str]:
-    groups: list[str] = []
+    section_ids: list[str] = []
     for section_id, _name, _description, section_groups in sections:
         if section_id not in selected_sections:
             continue
-        groups.extend(group for group in section_groups if group in selected_groups)
-    return groups
+        if any(group in selected_groups for group in section_groups):
+            section_ids.append(section_id)
+    return section_ids
+
+
+def _section_by_id(
+    sections: list[tuple[str, str, str, tuple[str, ...]]], section_id: str
+) -> tuple[str, str, str, tuple[str, ...]]:
+    for section in sections:
+        if section[0] == section_id:
+            return section
+    raise KeyError(section_id)
 
 
 def _default_groups_after_tool_section_change(
@@ -439,21 +460,7 @@ def _tool_section_label(
     examples = _tool_examples(manifest, groups)
     group_names = ", ".join(groups)
     suffix = f" — e.g. {examples}" if examples else ""
-    return f"Tools: {name} ({group_names}) — {description}{suffix}"
-
-
-def _group_title(group: str) -> str:
-    titles = {
-        "ai": "AI",
-        "api": "API",
-        "db": "DB",
-        "dev": "Dev",
-        "docs": "Docs",
-        "iac": "IaC",
-        "k8s": "Kubernetes",
-        "perf": "Performance",
-    }
-    return titles.get(group, group.replace("-", " ").title())
+    return f"Packages: {name} ({group_names}) — {description}{suffix}"
 
 
 def _tool_examples(manifest: Manifest, groups: tuple[str, ...]) -> str:
