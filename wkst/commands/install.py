@@ -87,9 +87,10 @@ def run(
     )
 
     if wants_setup(setup_names, "post_bootstrap"):
-        log.info("phase 3/5: post-package bootstrap (rustup, oh-my-posh, shell)")
+        log.info("phase 3/5: post-package bootstrap (rustup, oh-my-posh, colorscripts, shell)")
         bootstrap.ensure_rustup(platform_info, dry_run=dry_run)
         bootstrap.ensure_oh_my_posh(platform_info, dry_run=dry_run)
+        bootstrap.ensure_colorscripts(platform_info, dry_run=dry_run)
         bootstrap.ensure_zsh_default_shell(platform_info, dry_run=dry_run)
     else:
         log.info("phase 3/5: post-package bootstrap skipped by menu")

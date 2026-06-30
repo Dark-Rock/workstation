@@ -75,39 +75,59 @@ export SAVEHIST=$HISTSIZE
 # ZINIT PLUGINS
 # ==================================================
 
-# Evalcache - cache slow eval commands for faster startup
+# Evalcache stays synchronous: every _evalcache call below depends on it.
 zinit light mroth/evalcache
 
-# Syntax highlighting
-zinit light zdharma-continuum/fast-syntax-highlighting
+# --- Deferred (turbo) plugin loading ---------------------------------------
+# Everything below loads just after the first prompt paints (`wait lucid`), so
+# it is off the startup critical path. Plugin *settings* are set here (they are
+# read when the plugin actually loads). Ordering matters: zsh-completions is
+# queued before the group that runs compinit, and fzf-tab loads after it.
 
-# Autosuggestions with custom styling
-zinit light zsh-users/zsh-autosuggestions
+# Version-pinned completion dump (replaces the old manual compinit block). The
+# single `zicompinit` below honours this path.
+ZINIT[ZCOMPDUMP_PATH]="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump-${ZSH_VERSION}"
+mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+
+# Autosuggestion styling (read when the plugin loads below).
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=240'
 ZSH_AUTOSUGGEST_STRATEGY=(completion)
 ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
 
-# Completions
-zinit light zsh-users/zsh-completions
-
-# Autopair - auto close brackets, quotes, parentheses
-zinit light hlissner/zsh-autopair
-
-# You-should-use - reminds you of aliases
-zinit light MichaelAquilina/zsh-you-should-use
+# You-should-use settings.
 export YSU_MESSAGE_POSITION="after"
 export YSU_MODE=ALL
 # export YSU_HARDCORE=1
 
-# FZF-TAB (fzf itself is integrated via `eval "$(fzf --zsh)"` below, not as a
-# zinit plugin — avoids cloning the fzf repo and double-loading its bindings).
-zinit ice wait"0" atinit"zicompinit; zicdreplay" silent
+# Completion definitions — blockf keeps them off fpath until compinit runs.
+zinit ice wait lucid blockf
+zinit light zsh-users/zsh-completions
+
+# Autosuggestions, autopair, and syntax highlighting. fast-syntax-highlighting
+# loads LAST and carries the single, cached (`-C`) compinit call. By the time it
+# fires (first prompt) the brew fpath additions below have already run, and
+# zsh-completions is queued, so compinit sees every completion. Immediately
+# after compinit we load all tool completions (kubectl, helm, gh, …) — they call
+# `compdef`, so they MUST run after compinit (see _wkst_load_tool_completions).
+zinit wait lucid for \
+  atload"!_zsh_autosuggest_start" \
+    zsh-users/zsh-autosuggestions \
+  hlissner/zsh-autopair \
+  atinit"ZINIT[COMPINIT_OPTS]=-C; zicompinit; zicdreplay; _wkst_load_tool_completions" \
+    zdharma-continuum/fast-syntax-highlighting
+
+# fzf-tab must load AFTER compinit (above). fzf itself is integrated via
+# `eval "$(fzf --zsh)"` below, not as a zinit plugin — avoids cloning the fzf
+# repo and double-loading its bindings.
+zinit ice wait lucid
 zinit light Aloxaf/fzf-tab
 
-zinit load zdharma-continuum/history-search-multi-word
-
-zinit snippet OMZP::colored-man-pages
-zinit snippet OMZP::sudo
+# Lower-priority extras (history-search-multi-word removed: it bound Ctrl-R but
+# Atuin rebinds Ctrl-R afterward, so it was fully shadowed — see ATUIN section).
+zinit wait lucid for \
+  MichaelAquilina/zsh-you-should-use \
+  OMZP::colored-man-pages \
+  OMZP::sudo
 
 # ==================================================
 # OH-MY-POSH PROMPT (REPLACES POWERLEVEL10K)
@@ -133,17 +153,9 @@ if command -v vivid >/dev/null; then
   export LS_COLORS="$(vivid generate catppuccin-macchiato)"
 fi
 
-autoload -Uz compinit
-
-ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
-ZSH_COMPDUMP="${ZSH_CACHE_DIR}/zcompdump-${ZSH_VERSION}"
-mkdir -p "$ZSH_CACHE_DIR"
-
-if [[ -f "$ZSH_COMPDUMP" ]]; then
-  compinit -C -d "$ZSH_COMPDUMP"
-else
-  compinit -d "$ZSH_COMPDUMP"
-fi
+# compinit is run exactly once, deferred, by the turbo block above
+# (`zicompinit`, cached via -C, dumping to ZINIT[ZCOMPDUMP_PATH]). The previous
+# explicit compinit here was a second, redundant invocation — removed.
 
 # Better completion menu styling
 zstyle ':completion:*' menu select
@@ -319,6 +331,8 @@ alias path='echo -e ${PATH//:/\\n}'
 alias now='date +"%T"'
 alias nowdate='date +"%Y-%m-%d"'
 alias src='source ~/.zshrc'
+# Clear the screen and draw a random shell-color-script.
+command -v colorscript >/dev/null && alias cl='clear; colorscript -r'
 
 # Viewers — keep `cat`/`less` as the real tools (aliasing them breaks
 # scripts, here-docs, and piping). Use `show`/`b` for bat explicitly.
@@ -356,8 +370,14 @@ alias krewls='kubectl krew list'
 alias krewsync='kubectl krew update'
 alias krewup='kubectl krew upgrade'
 
-# kubectl shortcuts
-alias k='kubectl'
+# kubectl shortcuts — `k` uses kubecolor (colorized kubectl) when available,
+# falling back to plain kubectl. The kgp/kgs/etc. aliases below stay on kubectl
+# so they remain pipe-safe and script-friendly.
+if command -v kubecolor >/dev/null; then
+  alias k='kubecolor'
+else
+  alias k='kubectl'
+fi
 alias kgp='kubectl get pods'
 alias kgpw='kubectl get pods -o wide'
 alias kgpa='kubectl get pods --all-namespaces'
@@ -696,10 +716,22 @@ export CLICOLOR=1
 # KUBERNETES ENVIRONMENT
 # ==================================================
 
-# Enable kubectl completion (cached for faster startup)
-if command -v kubectl >/dev/null; then
-  _evalcache kubectl completion zsh
-fi
+# Tool completions are loaded together, deferred until just after compinit (run
+# by the turbo block's `zicompinit`), because each emits `compdef` calls that
+# require compinit first. Invoked from fast-syntax-highlighting's atinit. Each
+# is guarded by command -v and cached via _evalcache, so cost is negligible.
+_wkst_load_tool_completions() {
+  command -v kubectl   >/dev/null && _evalcache kubectl completion zsh
+  command -v helm      >/dev/null && _evalcache helm completion zsh
+  command -v gh        >/dev/null && _evalcache gh completion -s zsh
+  command -v kind      >/dev/null && _evalcache kind completion zsh
+  command -v k9s       >/dev/null && _evalcache k9s completion zsh
+  command -v kustomize >/dev/null && _evalcache kustomize completion zsh
+  command -v just      >/dev/null && _evalcache just --completions zsh
+  command -v rustup    >/dev/null && _evalcache rustup completions zsh
+  # kubecolor shares kubectl's completion (it's a passthrough wrapper).
+  command -v kubecolor >/dev/null && compdef kubecolor=kubectl
+}
 
 
 # ==================================================
@@ -731,7 +763,8 @@ _wkst_show_greeter() {
 
 if _wkst_show_greeter; then
   clear
-  command -v fastfetch >/dev/null && fastfetch
+  # Visual init: a random shell-color-script (installed via wkst bootstrap).
+  command -v colorscript >/dev/null && colorscript -r
   echo
 
   # Show current k8s context on shell start

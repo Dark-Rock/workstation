@@ -6,6 +6,7 @@ Handles the chicken-and-egg cases that backends can't:
 - APT prerequisites on Linux (curl/git/build-essential).
 - rustup install (provides ``cargo`` so cargo-backend tools can run).
 - oh-my-posh install on Linux (no apt package).
+- shell-color-scripts install (no brew/apt package; provides ``colorscript``).
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from wkst.process import run
 _HOMEBREW_INSTALL_URL = "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 _RUSTUP_INSTALL_URL = "https://sh.rustup.rs"
 _OMP_INSTALL_URL = "https://ohmyposh.dev/install.sh"
+_COLORSCRIPTS_REPO = "https://gitlab.com/dwt1/shell-color-scripts.git"
 
 
 def ensure_homebrew(platform_info: PlatformInfo, *, dry_run: bool) -> bool:
@@ -94,6 +96,30 @@ def ensure_oh_my_posh(platform_info: PlatformInfo, *, dry_run: bool) -> bool:
         bin_dir.mkdir(parents=True, exist_ok=True)
     cmd = f"curl -fsSL {_OMP_INSTALL_URL} | bash -s -- -d {bin_dir}"
     return run(["bash", "-c", cmd], dry_run=dry_run, capture=False, retries=1).ok
+
+
+def ensure_colorscripts(platform_info: PlatformInfo, *, dry_run: bool) -> bool:
+    """Install dwt1's shell-color-scripts (provides ``colorscript`` for the
+    shell greeter's visual init). Not packaged in brew/apt, so clone + build.
+
+    Upstream's Makefile installs the binary under ``/usr/local/bin`` and the art
+    under ``/opt/shell-color-scripts/colorscripts`` (hardcoded), which needs
+    sudo. Idempotent: skips when ``colorscript`` is already on PATH.
+    """
+    if command_exists("colorscript"):
+        return True
+    log.info("bootstrap: installing shell-color-scripts")
+    if dry_run:
+        log.info("(dry-run) would clone + 'make install' shell-color-scripts")
+        return True
+    # Clone to a throwaway temp dir, install with sudo (matches upstream), clean up.
+    cmd = (
+        "set -e; tmp=$(mktemp -d); "
+        f'git clone --depth 1 {_COLORSCRIPTS_REPO} "$tmp"; '
+        'sudo make -C "$tmp" install; '
+        'rm -rf "$tmp"'
+    )
+    return run(["bash", "-c", cmd], capture=False, retries=1).ok
 
 
 def ensure_zsh_default_shell(platform_info: PlatformInfo, *, dry_run: bool) -> bool:

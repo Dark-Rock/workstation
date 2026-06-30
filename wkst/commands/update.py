@@ -83,9 +83,10 @@ def run(
         log.info("phase 3/5: dotfile refresh skipped by menu")
 
     if wants_setup(setup_names, "post_bootstrap"):
-        log.info("phase 4/5: post-package update (rustup, oh-my-posh)")
+        log.info("phase 4/5: post-package update (rustup, oh-my-posh, colorscripts)")
         bootstrap.ensure_rustup(platform_info, dry_run=dry_run)
         bootstrap.ensure_oh_my_posh(platform_info, dry_run=dry_run)
+        bootstrap.ensure_colorscripts(platform_info, dry_run=dry_run)
     else:
         log.info("phase 4/5: post-package update skipped by menu")
 

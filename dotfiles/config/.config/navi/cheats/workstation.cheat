@@ -103,6 +103,12 @@ kubectl diff -f <file>
 # Get a shell in a pod (fuzzy pick)
 kubectl exec -it "$(kubectl get pods --no-headers | fzf | awk '{print $1}')" -- sh
 
+# Colorized kubectl (k is aliased to kubecolor when installed)
+k <args>
+
+# Run any kubectl command with colorized output
+kubecolor <args>
+
 % workstation: containers, containers
 
 # Interactive docker TUI
